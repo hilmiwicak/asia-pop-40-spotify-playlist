@@ -16,5 +16,8 @@
   "bugs": {
     "url": "https://github.com/hilmiwicak/asia-pop-40-spotify-playlist/issues"
   },
-  "homepage": "https://github.com/hilmiwicak/asia-pop-40-spotify-playlist#readme"
+  "homepage": "https://github.com/hilmiwicak/asia-pop-40-spotify-playlist#readme",
+  "dependencies": {
+    "node-fetch": "^2.6.1"
+  }
 }
