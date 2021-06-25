@@ -1,7 +1,6 @@
 require('dotenv').config()
+const { cheerio } = require('cheerio');
 const { default: fetch } = require("node-fetch");
-
-const PLAYLIST_ID = process.env.SPOTIFY_PLAYLIST_ID 
 
 function getToken() {
     
@@ -16,11 +15,27 @@ function getToken() {
         },
         body : 'grant_type=client_credentials'
     })
-    .then(response => (response.json()))
-    .then(json => ((json.access_token)))
+    .then(response => response.json())
+    .then(responseJson => responseJson)
+    .catch(err => err)
 }
 
-//next api call
-async function test(){
-    const testing = await getToken()
+async function scrapeAP40(){
+    const AP40Response = fetch("http://asiapop40.com").then()
 }
+
+async function mainFunction(){
+
+    console.log('Scraping Asia Pop 40 \'s website ...')
+
+    console.log('Getting Spotify Token ...')
+    const token = await getToken()
+ 
+    console.log('Updating Spotify Playlist')
+
+
+
+    
+}
+
+mainFunction()
