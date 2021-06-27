@@ -3,28 +3,6 @@ const cheerio  = require('cheerio');
 const fetch = require("node-fetch");
 const fs = require('fs')
 
-/** 
- * function that takes spotify client credential flow's token
- *  
- */
-const getToken = () => {
-    
-    const encodeClientKey = process.env.SPOTIFY_CLIENT_ID + ':' + process.env.SPOTIFY_CLIENT_SECRET
-    const encodedClientKey = Buffer.from(encodeClientKey, 'utf-8').toString('base64')    
-
-    return fetch("https://accounts.spotify.com/api/token", {
-                method : "post",
-                headers : {
-                    'Authorization' : "Basic " + encodedClientKey,
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body : 'grant_type=client_credentials'
-            })
-            .then(response => response.json())
-            .then(responseJson => responseJson)
-            .catch(err => err)
-}
-
 /**
  * function that scrapes Asia Pop 40 's website .
  * takes texts from classes "chart-track-<title or rank or artists>" ,
@@ -33,40 +11,76 @@ const getToken = () => {
  */
 const scrapeAP40 = async () => {
 
-    const AP40HTMl = await fetch("http://asiapop40.com")
-                                .then(response => response.text())
-                                .catch(err => console.log(err))
+    try {
+        const AP40Fetch = await fetch("http://asiapop40.com")
+        if(!AP40Fetch.ok) throw new Error('not fetching asiapop40 correctly') 
 
-    const $ = cheerio.load(AP40HTMl)
+        const AP40HTMl = await AP40Fetch.text()
 
-    let charts = []
+        const $ = cheerio.load(AP40HTMl)
+    
+        let charts = []
+    
+        $('.accordion-item').each((i, chartItem) => {
+            let chartNode = $(chartItem)
+    
+            let chartSongRank = chartNode.find('.chart-track-rank').text()
+    
+            // find the title, and then remove the '-'
+            let chartSongTitle = chartNode.find('.chart-track-title').children().remove().end().text()
+    
+            let chartSongArtists = []
+            chartNode.find('.chart-artist-title').children().each((i, artist) => {
+                let artistNode = $(artist)
+                chartSongArtists.push(artistNode.text())
+            })
 
-    $('.accordion-item').each((i, chartItem) => {
-        let chartNode = $(chartItem)
-        let chartSongRank = chartNode.find('.chart-track-rank').text()
-
-        let chartSongTitle = chartNode.find('.chart-track-title').text()
-        chartSongTitle = chartSongTitle.split(' ')
-        chartSongTitle.pop() // removing the '-' when taking the title
-        chartSongTitle = chartSongTitle.join(' ')
-
-        let chartSongArtists = []
-        chartNode.find('.chart-artist-title').children().each((i, artist) => {
-            let artistNode = $(artist)
-            chartSongArtists.push(artistNode.text())
+            let chartData = {
+                rank : chartSongRank,
+                title : chartSongTitle,
+                artists : chartSongArtists
+            }
+        
+            charts.push(chartData)
+    
         })
-                
-        let chartData = {
-            rank : chartSongRank,
-            title : chartSongTitle,
-            artists : chartSongArtists
-        }
-    
-        charts.push(chartData)
-    })
+        
+        fs.writeFileSync('./chart.json', JSON.stringify(charts), 'utf8')
 
-    fs.writeFileSync('./chart.json', JSON.stringify(charts), 'utf8')
+    } catch (err) {
+        console.error("Error inside scrapeAP40 " + err)
+    }
+
     
+}
+
+/** 
+ * function that takes spotify client credential flow's token
+ */
+const getToken = async () => {
+    
+    const clientKey = process.env.SPOTIFY_CLIENT_ID + ':' + process.env.SPOTIFY_CLIENT_SECRET
+    const encodedClientKey = Buffer.from(clientKey, 'utf-8').toString('base64')    
+
+    try {
+        const spotifyTokenFetch =  
+            await fetch("https://accounts.spotify.com/api/token", {
+                method : "post",
+                headers : {
+                    'Authorization' : "Basic " + encodedClientKey,
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body : 'grant_type=client_credentials'
+            })
+
+        if (!spotifyTokenFetch.ok) throw new Error('not fetching spotify token correctly')
+
+        const spotifyTokenJson = await spotifyTokenFetch.json()
+        return spotifyTokenJson
+        
+    } catch (err) {
+        console.error("Error inside getToken function : " + err)
+    }
 }
 
 /**
@@ -80,6 +94,7 @@ const mainFunction = async () => {
 
     // console.log('Getting Spotify Token ...')
     // const token = await getToken()
+    // console.log(token)
  
     // console.log('Updating Spotify Playlist')
 
