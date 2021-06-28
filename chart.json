@@ -1,48 +1,55 @@
 [
   {
-    "rank": "1",
+    "rankThisWeek": "1",
+    "rankLastWeek": "1",
     "title": "good 4 u ",
     "artists": [
       "Olivia Rodrigo"
     ]
   },
   {
-    "rank": "2",
+    "rankThisWeek": "2",
+    "rankLastWeek": "2",
     "title": "Butter ",
     "artists": [
       "BTS"
     ]
   },
   {
-    "rank": "3",
+    "rankThisWeek": "3",
+    "rankLastWeek": "5",
     "title": "Kiss Me More ft. SZA ",
     "artists": [
       "Doja Cat"
     ]
   },
   {
-    "rank": "4",
+    "rankThisWeek": "4",
+    "rankLastWeek": "4",
     "title": "Peaches ft. Daniel Caesar & GIVĒON ",
     "artists": [
       "Justin Bieber"
     ]
   },
   {
-    "rank": "5",
+    "rankThisWeek": "5",
+    "rankLastWeek": "3",
     "title": "deja vu ",
     "artists": [
       "Olivia Rodrigo"
     ]
   },
   {
-    "rank": "6",
+    "rankThisWeek": "6",
+    "rankLastWeek": "6",
     "title": "Save Your Tears ",
     "artists": [
       "The Weeknd"
     ]
   },
   {
-    "rank": "7",
+    "rankThisWeek": "7",
+    "rankLastWeek": "9",
     "title": "Leave The Door Open ",
     "artists": [
       "Bruno Mars",
@@ -51,63 +58,72 @@
     ]
   },
   {
-    "rank": "8",
+    "rankThisWeek": "8",
+    "rankLastWeek": "14",
     "title": "happier ",
     "artists": [
       "Olivia Rodrigo"
     ]
   },
   {
-    "rank": "9",
+    "rankThisWeek": "9",
+    "rankLastWeek": "8",
     "title": "Build A Bitch ",
     "artists": [
       "Bella Poarch"
     ]
   },
   {
-    "rank": "10",
+    "rankThisWeek": "10",
+    "rankLastWeek": "7",
     "title": "drivers license ",
     "artists": [
       "Olivia Rodrigo"
     ]
   },
   {
-    "rank": "11",
+    "rankThisWeek": "11",
+    "rankLastWeek": "10",
     "title": "Levitating ft. DaBaby ",
     "artists": [
       "Dua Lipa"
     ]
   },
   {
-    "rank": "12",
+    "rankThisWeek": "12",
+    "rankLastWeek": " 12",
     "title": "traitor ",
     "artists": [
       "Olivia Rodrigo"
     ]
   },
   {
-    "rank": "13",
+    "rankThisWeek": "13",
+    "rankLastWeek": "11",
     "title": "MONTERO (Call Me By Your Name) ",
     "artists": [
       "Lil Nas X"
     ]
   },
   {
-    "rank": "14",
+    "rankThisWeek": "14",
+    "rankLastWeek": "13",
     "title": "HEARTBREAK ANNIVERSARY ",
     "artists": [
       "GIVĒON"
     ]
   },
   {
-    "rank": "15",
+    "rankThisWeek": "15",
+    "rankLastWeek": "15",
     "title": "At My Worst ",
     "artists": [
       "Pink Sweat$"
     ]
   },
   {
-    "rank": "16",
+    "rankThisWeek": "16",
+    "rankLastWeek": "17",
     "title": "Leave Before You Love Me ",
     "artists": [
       "Marshmello",
@@ -115,7 +131,8 @@
     ]
   },
   {
-    "rank": "17",
+    "rankThisWeek": "17",
+    "rankLastWeek": "19",
     "title": "Beautiful Mistakes ",
     "artists": [
       "Maroon 5",
@@ -123,56 +140,64 @@
     ]
   },
   {
-    "rank": "18",
+    "rankThisWeek": "18",
+    "rankLastWeek": "18",
     "title": "Dynamite ",
     "artists": [
       "BTS"
     ]
   },
   {
-    "rank": "19",
+    "rankThisWeek": "19",
+    "rankLastWeek": "22",
     "title": "Arcade ",
     "artists": [
       "Duncan Laurence"
     ]
   },
   {
-    "rank": "20",
+    "rankThisWeek": "20",
+    "rankLastWeek": "20",
     "title": "Astronaut In The Ocean ",
     "artists": [
       "Masked Wolf"
     ]
   },
   {
-    "rank": "21",
+    "rankThisWeek": "21",
+    "rankLastWeek": "21",
     "title": "favorite crime ",
     "artists": [
       "Olivia Rodrigo"
     ]
   },
   {
-    "rank": "22",
+    "rankThisWeek": "22",
+    "rankLastWeek": "24",
     "title": "Bedroom ft. Anne-Marie ",
     "artists": [
       "JJ Lin"
     ]
   },
   {
-    "rank": "23",
+    "rankThisWeek": "23",
+    "rankLastWeek": "23",
     "title": "Hold On ",
     "artists": [
       "Justin Bieber"
     ]
   },
   {
-    "rank": "24",
+    "rankThisWeek": "24",
+    "rankLastWeek": "-",
     "title": "Solar Power ",
     "artists": [
       "Lorde"
     ]
   },
   {
-    "rank": "25",
+    "rankThisWeek": "25",
+    "rankLastWeek": "26",
     "title": "this is how you fall in love ",
     "artists": [
       "Jeremy Zucker",
@@ -180,21 +205,24 @@
     ]
   },
   {
-    "rank": "26",
+    "rankThisWeek": "26",
+    "rankLastWeek": "16",
     "title": "Lost Cause ",
     "artists": [
       "Billie Eilish"
     ]
   },
   {
-    "rank": "27",
+    "rankThisWeek": "27",
+    "rankLastWeek": "31",
     "title": "Kiss (Never Let Me Go) ",
     "artists": [
       "Thyro & Yumi"
     ]
   },
   {
-    "rank": "28",
+    "rankThisWeek": "28",
+    "rankLastWeek": "-",
     "title": "Chosen ft. Ty Dolla $ign ",
     "artists": [
       "Blxst",
@@ -202,42 +230,48 @@
     ]
   },
   {
-    "rank": "29",
+    "rankThisWeek": "29",
+    "rankLastWeek": "36",
     "title": "Cheating on You ",
     "artists": [
       "Charlie Puth"
     ]
   },
   {
-    "rank": "30",
+    "rankThisWeek": "30",
+    "rankLastWeek": "32",
     "title": "Love Is Gone ft. Dylan Matthew [Acoustic] ",
     "artists": [
       "Slander"
     ]
   },
   {
-    "rank": "31",
+    "rankThisWeek": "31",
+    "rankLastWeek": "25",
     "title": "enough for you ",
     "artists": [
       "Olivia Rodrigo"
     ]
   },
   {
-    "rank": "32",
+    "rankThisWeek": "32",
+    "rankLastWeek": "35",
     "title": "Here's Your Perfect ",
     "artists": [
       "Jamie Miller"
     ]
   },
   {
-    "rank": "33",
+    "rankThisWeek": "33",
+    "rankLastWeek": "37",
     "title": "Double Take ",
     "artists": [
       "dhruv"
     ]
   },
   {
-    "rank": "34",
+    "rankThisWeek": "34",
+    "rankLastWeek": "-",
     "title": "Know Me Too Well ",
     "artists": [
       "New Hope Club",
@@ -245,14 +279,16 @@
     ]
   },
   {
-    "rank": "35",
+    "rankThisWeek": "35",
+    "rankLastWeek": "34",
     "title": "It Will Rain ",
     "artists": [
       "Bruno Mars"
     ]
   },
   {
-    "rank": "36",
+    "rankThisWeek": "36",
+    "rankLastWeek": "27",
     "title": "Our Song ",
     "artists": [
       "Anne-Marie",
@@ -260,28 +296,32 @@
     ]
   },
   {
-    "rank": "37",
+    "rankThisWeek": "37",
+    "rankLastWeek": "28",
     "title": "1 step forward, 3 steps back ",
     "artists": [
       "Olivia Rodrigo"
     ]
   },
   {
-    "rank": "38",
+    "rankThisWeek": "38",
+    "rankLastWeek": "29",
     "title": "Talking to the Moon ",
     "artists": [
       "Bruno Mars"
     ]
   },
   {
-    "rank": "39",
+    "rankThisWeek": "39",
+    "rankLastWeek": "30",
     "title": "brutal ",
     "artists": [
       "Olivia Rodrigo"
     ]
   },
   {
-    "rank": "40",
+    "rankThisWeek": "40",
+    "rankLastWeek": "33",
     "title": "Cloud 9 ",
     "artists": [
       "Beach Bunny"

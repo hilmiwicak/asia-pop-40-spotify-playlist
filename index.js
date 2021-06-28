@@ -24,9 +24,11 @@ const scrapeAP40 = async () => {
         $('.accordion-item').each((i, chartItem) => {
             let chartNode = $(chartItem)
     
-            let chartSongRank = chartNode.find('.chart-track-rank').text()
+            let chartSongRankThisWeek = chartNode.find('.chart-track-rank').text()
+            let chartSongRankLastWeek = chartNode.find('.chart-track-rank-last-week').text()
+            chartSongRankLastWeek = chartSongRankLastWeek.replace(/\n/g, "") // removing the '\n' globally
     
-            // find the title, and then remove the '-'
+            // find the title, removing the '-', and then get the text
             let chartSongTitle = chartNode.find('.chart-track-title').children().remove().end().text()
     
             let chartSongArtists = []
@@ -36,9 +38,10 @@ const scrapeAP40 = async () => {
             })
 
             let chartData = {
-                rank : chartSongRank,
-                title : chartSongTitle,
-                artists : chartSongArtists
+                rankThisWeek    : chartSongRankThisWeek,
+                rankLastWeek    : chartSongRankLastWeek,
+                title           : chartSongTitle,
+                artists         : chartSongArtists
             }
         
             charts.push(chartData)
@@ -48,7 +51,7 @@ const scrapeAP40 = async () => {
         fs.writeFileSync('./chart.json', JSON.stringify(charts), 'utf8')
 
     } catch (err) {
-        console.error("Error inside scrapeAP40 " + err)
+        console.error("Error inside scrapeAP40 :" + err)
     }
 
     
@@ -79,7 +82,7 @@ const getToken = async () => {
         return spotifyTokenJson
         
     } catch (err) {
-        console.error("Error inside getToken function : " + err)
+        console.error("Error inside getToken : " + err)
     }
 }
 
