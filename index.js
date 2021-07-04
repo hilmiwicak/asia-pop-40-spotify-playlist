@@ -24,10 +24,8 @@ const scrapeAP40 = async () => {
         $('.accordion-item').each((i, chartItem) => {
             let chartNode = $(chartItem)
     
-            let chartSongRankThisWeek = chartNode.find('.chart-track-rank').text()
-            let chartSongRankLastWeek = chartNode.find('.chart-track-rank-last-week').text()
-            chartSongRankLastWeek = chartSongRankLastWeek.replace(/\n/g, "") // removing the '\n' globally
-    
+            let chartSongRank = chartNode.find('.chart-track-rank').text()
+
             // find the title, removing the '-', and then get the text
             let chartSongTitle = chartNode.find('.chart-track-title').children().remove().end().text()
     
@@ -38,10 +36,9 @@ const scrapeAP40 = async () => {
             })
 
             let chartData = {
-                rankThisWeek    : chartSongRankThisWeek,
-                rankLastWeek    : chartSongRankLastWeek,
-                title           : chartSongTitle,
-                artists         : chartSongArtists
+                rank    : chartSongRank,
+                title   : chartSongTitle,
+                artists : chartSongArtists
             }
         
             charts.push(chartData)
