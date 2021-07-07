@@ -28,6 +28,8 @@ const scrapeAP40 = async () => {
 
             // find the title, removing the '-', and then get the text
             let chartSongTitle = chartNode.find('.chart-track-title').children().remove().end().text()
+            chartSongTitle = chartSongTitle.replace('ft. ', '')
+            chartSongTitle = chartSongTitle.replace(/[\[\]]+/g, '')
     
             let chartSongArtists = []
             chartNode.find('.chart-artist-title').children().each((i, artist) => {
@@ -36,9 +38,10 @@ const scrapeAP40 = async () => {
             })
 
             let chartData = {
-                rank    : chartSongRank,
-                title   : chartSongTitle,
-                artists : chartSongArtists
+                rank        : chartSongRank,
+                title       : chartSongTitle,
+                artists     : chartSongArtists,
+                spotifyURI  : ""
             }
         
             charts.push(chartData)
