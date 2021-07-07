@@ -53,25 +53,23 @@ const scrapeAP40 = async () => {
     } catch (err) {
         console.error("Error inside scrapeAP40 :" + err)
     }
-
-    
 }
 
 /** 
  * function that takes spotify client credential flow's token
  */
-const getToken = async () => {
+ const getSpotifyToken = async () => {
     
     const clientKey = process.env.SPOTIFY_CLIENT_ID + ':' + process.env.SPOTIFY_CLIENT_SECRET
     const encodedClientKey = Buffer.from(clientKey, 'utf-8').toString('base64')    
 
     try {
-        const spotifyTokenFetch =  
-            await fetch("https://accounts.spotify.com/api/token", {
+        const spotifyTokenFetch =  await
+            fetch("https://accounts.spotify.com/api/token", {
                 method : "post",
                 headers : {
                     'Authorization' : "Basic " + encodedClientKey,
-                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Content-Type'  : 'application/x-www-form-urlencoded',
                 },
                 body : 'grant_type=client_credentials'
             })
@@ -79,11 +77,71 @@ const getToken = async () => {
         if (!spotifyTokenFetch.ok) throw new Error('not fetching spotify token correctly')
 
         const spotifyTokenJson = await spotifyTokenFetch.json()
-        return spotifyTokenJson
-        
+        return spotifyTokenJson.access_token
     } catch (err) {
-        console.error("Error inside getToken : " + err)
+        console.error("Error inside getSpotifyToken : " + err)
     }
+}
+
+/**
+ * read chart.json, change them into array, search
+ * for each song's uri through spotify search API from the array 
+ * and put them into the array, change them into json
+ * 
+ */
+const spotifySongURIs = async (token) => {
+
+    try {
+        let chartsData = fs.readFileSync('./chart.json', 'utf8')
+        chartsData = JSON.parse(chartsData)
+        
+        const searchSpotifySongURI = async (token, searchQuery) => {
+
+            try {
+                const spotifySearch = await 
+                    fetch("https://api.spotify.com/v1/search?q=" + searchQuery + "&type=track&limit=1", {
+                        method : "get",
+                        headers : { 
+                            'Authorization' : "Bearer " + token,
+                            'Content-Type'  : 'application/json',
+                            'Accept'        : 'application/json'
+                        }
+                    })
+                
+                if (!spotifySearch.ok) throw new Error('not fetching spotify search correctly')
+                const spotifySearchResult = await spotifySearch.json()
+                return spotifySearchResult
+            } catch (err) {
+                console.error("Error inside searchSpotifySongURI : " + searchQuery + err )
+            }
+        }
+
+        
+        // const song = chartsData[30]
+        // const artist = song.artists.join(' ')
+        // const title = song.title
+        // const searchQuery = encodeURI((title + artist))
+        // console.log(searchQuery)
+        // const searchSongResult = await searchSpotifySongURI(token, searchQuery)
+        // song.spotifyURI = searchSongResult.tracks.items[0].uri
+        // console.log(searchSongResult.tracks)
+
+        for(let song of chartsData){
+            const artist = song.artists.join(' ')
+            const title = song.title
+            // const searchQuery = (title + artist).replace(/\s/g, '+')
+            const searchQuery = encodeURI(title + artist)
+            // console.log(searchQuery)
+            const searchSongResult = await searchSpotifySongURI(token, searchQuery)
+            song.spotifyURI = searchSongResult.tracks.items[0].uri
+
+        }
+
+        return chartsData
+    } catch (err) {
+        console.error("Error inside spotifySongURIs : " + err)
+    }
+    
 }
 
 /**
@@ -96,9 +154,13 @@ const mainFunction = async () => {
     // console.log(top40List)
 
     // console.log('Getting Spotify Token ...')
-    // const token = await getToken()
+    // const token = await getSpotifyToken()
     // console.log(token)
  
+    // console.log('Searches Spotify Songs from Asia Pop 40\'s List ...')
+    // const URIs = await spotifySongURIs(token)
+    // console.log(URIs)
+
     // console.log('Updating Spotify Playlist')
 
 
