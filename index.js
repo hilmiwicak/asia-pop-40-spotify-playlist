@@ -51,7 +51,7 @@ const scrapeAP40 = async () => {
         fs.writeFileSync('./chart.json', JSON.stringify(charts), 'utf8')
 
     } catch (err) {
-        console.error("Error inside scrapeAP40 :" + err)
+        console.error("Error inside scrapeAP40 : " + err)
     }
 }
 
@@ -92,9 +92,12 @@ const scrapeAP40 = async () => {
 const spotifySongURIs = async (token) => {
 
     try {
-        let chartsData = fs.readFileSync('./chart.json', 'utf8')
-        chartsData = JSON.parse(chartsData)
-        
+        const chartsData = fs.readFileSync('./chart.json', 'utf8')
+        let charts = JSON.parse(chartsData)
+
+        /**
+         * function for searching uri from each song
+         */
         const searchSpotifySongURI = async (token, searchQuery) => {
 
             try {
@@ -116,28 +119,22 @@ const spotifySongURIs = async (token) => {
             }
         }
 
-        
-        // const song = chartsData[30]
-        // const artist = song.artists.join(' ')
-        // const title = song.title
-        // const searchQuery = encodeURI((title + artist))
-        // console.log(searchQuery)
-        // const searchSongResult = await searchSpotifySongURI(token, searchQuery)
-        // song.spotifyURI = searchSongResult.tracks.items[0].uri
-        // console.log(searchSongResult.tracks)
-
-        for(let song of chartsData){
+        for(let song of charts){
             const artist = song.artists.join(' ')
             const title = song.title
-            // const searchQuery = (title + artist).replace(/\s/g, '+')
             const searchQuery = encodeURI(title + artist)
-            // console.log(searchQuery)
-            const searchSongResult = await searchSpotifySongURI(token, searchQuery)
-            song.spotifyURI = searchSongResult.tracks.items[0].uri
+
+            try {
+                const searchSongResult = await searchSpotifySongURI(token, searchQuery)
+                song.spotifyURI = searchSongResult.tracks.items[0].uri
+            } catch (err) { 
+                // if it doesn't exist any song inside spotify, it puts mr. brightside song
+                song.spotifyURI = 'spotify:track:7oK9VyNzrYvRFo7nQEYkWN'
+            }
 
         }
 
-        return chartsData
+        fs.writeFileSync('./chart.json', JSON.stringify(charts), 'utf8')
     } catch (err) {
         console.error("Error inside spotifySongURIs : " + err)
     }
@@ -149,8 +146,8 @@ const spotifySongURIs = async (token) => {
  */
 const mainFunction = async () => {
 
-    console.log('Scraping Asia Pop 40 \'s website ...')
-    const top40List = await scrapeAP40()
+    // console.log('Scraping Asia Pop 40 \'s website ...')
+    // const top40List = await scrapeAP40()
     // console.log(top40List)
 
     // console.log('Getting Spotify Token ...')
@@ -161,7 +158,7 @@ const mainFunction = async () => {
     // const URIs = await spotifySongURIs(token)
     // console.log(URIs)
 
-    // console.log('Updating Spotify Playlist')
+    // console.log('Updating Spotify Playlist ...')
 
 
 
