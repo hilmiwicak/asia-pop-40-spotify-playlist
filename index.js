@@ -1,7 +1,7 @@
-require('dotenv').config()
-const cheerio  = require('cheerio');
-const fetch = require("node-fetch");
-const fs = require('fs')
+import 'dotenv/config.js'
+import cheerio from 'cheerio'
+import fetch from 'node-fetch'
+import fs from 'fs'
 
 /**
  * function that scrapes Asia Pop 40 's website .
@@ -14,7 +14,6 @@ const scrapeAP40 = async () => {
     try {
         const AP40Fetch = await fetch("http://asiapop40.com")
         if(!AP40Fetch.ok) throw new Error('not fetching asiapop40 correctly') 
-
         const AP40HTMl = await AP40Fetch.text()
 
         const $ = cheerio.load(AP40HTMl)
@@ -45,11 +44,9 @@ const scrapeAP40 = async () => {
             }
         
             charts.push(chartData)
-    
         })
         
         fs.writeFileSync('./chart.json', JSON.stringify(charts), 'utf8')
-
     } catch (err) {
         console.error("Error inside scrapeAP40 : " + err)
     }
@@ -75,7 +72,6 @@ const scrapeAP40 = async () => {
             })
 
         if (!spotifyTokenFetch.ok) throw new Error('not fetching spotify token correctly')
-
         const spotifyTokenJson = await spotifyTokenFetch.json()
         return spotifyTokenJson.access_token
     } catch (err) {
@@ -87,7 +83,6 @@ const scrapeAP40 = async () => {
  * read chart.json, change them into array, search
  * for each song's uri through spotify search API from the array 
  * and put them into the array, change them into json
- * 
  */
 const spotifySongURIs = async (token) => {
 
@@ -99,7 +94,6 @@ const spotifySongURIs = async (token) => {
          * function for searching uri from each song
          */
         const searchSpotifySongURI = async (token, searchQuery) => {
-
             try {
                 const spotifySearch = await 
                     fetch("https://api.spotify.com/v1/search?q=" + searchQuery + "&type=track&limit=1", {
@@ -131,14 +125,12 @@ const spotifySongURIs = async (token) => {
                 // if it doesn't exist any song inside spotify, it puts mr. brightside song
                 song.spotifyURI = 'spotify:track:7oK9VyNzrYvRFo7nQEYkWN'
             }
-
         }
 
         fs.writeFileSync('./chart.json', JSON.stringify(charts), 'utf8')
     } catch (err) {
         console.error("Error inside spotifySongURIs : " + err)
     }
-    
 }
 
 /**
@@ -146,8 +138,8 @@ const spotifySongURIs = async (token) => {
  */
 const mainFunction = async () => {
 
-    // console.log('Scraping Asia Pop 40 \'s website ...')
-    // const top40List = await scrapeAP40()
+    console.log('Scraping Asia Pop 40 \'s website ...')
+    const top40List = await scrapeAP40()
     // console.log(top40List)
 
     // console.log('Getting Spotify Token ...')
@@ -158,10 +150,10 @@ const mainFunction = async () => {
     // const URIs = await spotifySongURIs(token)
     // console.log(URIs)
 
-    // console.log('Updating Spotify Playlist ...')
-
-
-
+    // console.log('Deleting Spotify Playlist Items ...')
+    
+    // console.log('Adding Spotify Playlist Items ...')
+    // const addSongs = await addSpotifyPlaylistSongs(token)
     
 }
 
