@@ -134,6 +134,57 @@ const spotifySongURIs = async (token) => {
 }
 
 /**
+ * function that removes all songs inside playlist
+ */
+ const removeSpotifyPlaylistSongs = async (token) => {
+    
+    const spotifyPlaylistID = process.env.SPOTIFY_PLAYLIST_ID  
+
+    try {
+        const removeSongs = await 
+            fetch("https://api.spotify.com/v1/playlists/" + spotifyPlaylistID + "/tracks", {
+                method : "delete",
+                headers : { 
+                    'Authorization' : "Bearer " + token,
+                    'Content-Type'  : 'application/json',
+                },
+                body : 'tracks'
+            })
+        
+    } catch (err) {
+        console.error("Error inside removeSpotifyPlaylistSongs : " + err)
+    }
+}
+
+/**
+ * function that add all songs to the playlist
+ */
+const addSpotifyPlaylistSongs = async (token) => {
+
+    const spotifyPlaylistID = process.env.SPOTIFY_PLAYLIST_ID
+    const chartsData = fs.readFileSync('./chart.json', 'utf8')
+    let charts = JSON.parse(chartsData)
+
+    let URIs = []
+    charts.forEach( (chart) => {
+        URIs.push(chart.spotifyURI)
+    })
+
+    try {
+        const addSongs = await
+        fetch("https://api.spotify.com/v1/playlists/" + spotifyPlaylistID + "/tracks", {
+            method : "post",
+            headers : { 
+                'Authorization' : "Bearer " + token,
+                'Content-Type'  : 'application/json',
+            },
+        })
+    } catch (err) {
+        console.error("Error inside addSpotifyPlaylistSongs : " + err)
+    }
+}
+
+/**
  * main function that runs all of the functions above
  */
 const mainFunction = async () => {
