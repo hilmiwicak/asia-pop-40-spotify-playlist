@@ -2,6 +2,7 @@ import 'dotenv/config.js'
 import cheerio from 'cheerio'
 import fetch from 'node-fetch'
 import fs from 'fs'
+import http from 'http'
 
 /**
  * function that scrapes Asia Pop 40 's website .
@@ -53,27 +54,23 @@ const scrapeAP40 = async () => {
 }
 
 /** 
- * function that takes spotify client credential flow's token
+ * function that takes spotify implicit grant token
  */
- const getSpotifyToken = async () => {
+ const getSpotifyToken = async (redirectURI) => {
     
-    const clientKey = process.env.SPOTIFY_CLIENT_ID + ':' + process.env.SPOTIFY_CLIENT_SECRET
-    const encodedClientKey = Buffer.from(clientKey, 'utf-8').toString('base64')    
+    const clientID = process.env.SPOTIFY_CLIENT_ID 
 
     try {
-        const spotifyTokenFetch =  await
-            fetch("https://accounts.spotify.com/api/token", {
-                method : "post",
-                headers : {
-                    'Authorization' : "Basic " + encodedClientKey,
-                    'Content-Type'  : 'application/x-www-form-urlencoded',
-                },
-                body : 'grant_type=client_credentials'
-            })
+        const spotifyTokenURL =
+            'https://accounts.spotify.com/authorize?' +
+            'client_id=' + clientID +
+            '&response_type=token' +
+            '&redirect_uri=' + redirectURI +
+            '&scope=playlist-modify-public' 
 
+        const spotifyTokenFetch =  await fetch(spotifyTokenURL)
         if (!spotifyTokenFetch.ok) throw new Error('not fetching spotify token correctly')
-        const spotifyTokenJson = await spotifyTokenFetch.json()
-        return spotifyTokenJson.access_token
+        return spotifyTokenFetch
     } catch (err) {
         console.error("Error inside getSpotifyToken : " + err)
     }
@@ -184,28 +181,4 @@ const addSpotifyPlaylistSongs = async (token) => {
     }
 }
 
-/**
- * main function that runs all of the functions above
- */
-const mainFunction = async () => {
-
-    console.log('Scraping Asia Pop 40 \'s website ...')
-    const top40List = await scrapeAP40()
-    // console.log(top40List)
-
-    // console.log('Getting Spotify Token ...')
-    // const token = await getSpotifyToken()
-    // console.log(token)
- 
-    // console.log('Searches Spotify Songs from Asia Pop 40\'s List ...')
-    // const URIs = await spotifySongURIs(token)
-    // console.log(URIs)
-
-    // console.log('Deleting Spotify Playlist Items ...')
-    
-    // console.log('Adding Spotify Playlist Items ...')
-    // const addSongs = await addSpotifyPlaylistSongs(token)
-    
-}
-
-mainFunction()
+export {getSpotifyToken}
