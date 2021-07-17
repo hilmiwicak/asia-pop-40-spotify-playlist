@@ -1,6 +1,7 @@
 import http from 'http'
+import https from 'https'
 import 'dotenv/config.js'
-import { getSpotifyToken } from './index.js'
+import { fetchSpotifyToken } from './index.js'
 
 const HOST = (process.env.HOST !== '') ? process.env.HOST : 'localhost'
 const PORT = (process.env.PORT !== '') ? process.env.PORT : '3000'
@@ -28,13 +29,14 @@ const serverHandlers = async (req, res) => {
             console.log('accessed /get-spotify-token/')
             console.log('taking redirected url....')
 
-            const responseToken = await getSpotifyToken(`${requestURL.origin}/add-songs-spotify-plyalist/`)
+            const responseToken = await fetchSpotifyToken(`${requestURL.origin}/add-songs-spotify-plyalist/`)
             const responseTokenURL = await responseToken.url
 
             res.writeHead(302, 'Moving you to the redirected URL', {
                 'location' : responseTokenURL
             })
-            res.write('getting you to redirected url...')
+
+            res.write(await responseToken.text())
             res.end()
         } catch (err) {
             console.error(`Error inside /get-spotify-token/ path : ${err}`)
@@ -48,7 +50,7 @@ const serverHandlers = async (req, res) => {
             "Content-Type" : "text/plain"
         })
         res.write('adding songs to spotify playlist...\n')
-        // res.end(getSpotifyToken(requestURL.origin))
+        // res.end(fetchSpotifyToken(requestURL.origin))
     } 
 
     // else {

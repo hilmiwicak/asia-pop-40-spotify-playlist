@@ -54,9 +54,9 @@ const scrapeAP40 = async () => {
 }
 
 /** 
- * function that takes spotify implicit grant token
+ * function that fetches spotify implicit grant token
  */
- const getSpotifyToken = async (redirectURI) => {
+const fetchSpotifyToken = async (redirectURI) => {
     
     const clientID = process.env.SPOTIFY_CLIENT_ID 
 
@@ -72,7 +72,7 @@ const scrapeAP40 = async () => {
         if (!spotifyTokenFetch.ok) throw new Error('not fetching spotify token correctly')
         return spotifyTokenFetch
     } catch (err) {
-        console.error("Error inside getSpotifyToken : " + err)
+        console.error("Error inside fetchSpotifyToken : " + err)
     }
 }
 
@@ -181,4 +181,4 @@ const addSpotifyPlaylistSongs = async (token) => {
     }
 }
 
-export {getSpotifyToken}
+export {fetchSpotifyToken}
