@@ -3,6 +3,7 @@ import cheerio from 'cheerio'
 import fetch from 'node-fetch'
 import fs from 'fs'
 import http from 'http'
+import puppeteer from 'puppeteer'
 
 /**
  * function that scrapes Asia Pop 40 's website .
@@ -18,19 +19,19 @@ const scrapeAP40 = async () => {
         const AP40HTMl = await AP40Fetch.text()
 
         const $ = cheerio.load(AP40HTMl)
-    
+
         let charts = []
-    
+
         $('.accordion-item').each((i, chartItem) => {
             let chartNode = $(chartItem)
-    
+
             let chartSongRank = chartNode.find('.chart-track-rank').text()
 
             // find the title, removing the '-', and then get the text
             let chartSongTitle = chartNode.find('.chart-track-title').children().remove().end().text()
             chartSongTitle = chartSongTitle.replace('ft. ', '')
             chartSongTitle = chartSongTitle.replace(/[\[\]]+/g, '')
-    
+
             let chartSongArtists = []
             chartNode.find('.chart-artist-title').children().each((i, artist) => {
                 let artistNode = $(artist)
@@ -46,7 +47,7 @@ const scrapeAP40 = async () => {
         
             charts.push(chartData)
         })
-        
+
         fs.writeFileSync('./chart.json', JSON.stringify(charts), 'utf8')
     } catch (err) {
         console.error("Error inside scrapeAP40 : " + err)
@@ -57,7 +58,7 @@ const scrapeAP40 = async () => {
  * function that fetches spotify implicit grant token
  */
 const fetchSpotifyToken = async (redirectURI) => {
-    
+
     const clientID = process.env.SPOTIFY_CLIENT_ID 
 
     try {
@@ -73,6 +74,38 @@ const fetchSpotifyToken = async (redirectURI) => {
         return spotifyTokenFetch
     } catch (err) {
         console.error("Error inside fetchSpotifyToken : " + err)
+    }
+}
+
+/**
+ * function to take token from implicit grant flow
+ */
+// const getSpotifyToken = async (urlTokenFetch = 'https://accounts.spotify.com/authorize?client_id=2a6b04c86b5b40ba9392878ad4cd3465&response_type=token&redirect_uri=http://localhost:3000/add-songs-spotify-playlist/&scope=playlist-modify-public') => {
+const getSpotifyToken = async (urlTokenFetch) => {
+
+    const spotifyEmail = process.env.SPOTIFY_EMAIL
+    const spotifyPassword = process.env.SPOTIFY_PASSWORD
+
+    try {
+        const browser = await puppeteer.launch({
+            headless : false,
+            devtools : true,
+        })
+
+        const page = await browser.newPage()
+        await page.setDefaultTimeout(0)
+
+        await page.goto(urlTokenFetch)
+        await page.waitForSelector('input#login-username[name=username]')
+
+        await page.click('[name=remember]')
+        await page.type('input[name=username]', spotifyEmail, { delay : 300 })
+        await page.type('[name=password]', spotifyPassword, { delay : 300 })
+        await page.click('button#login-button')
+
+        await console.log(`End`)
+    } catch (err) {
+        console.error(`error inside getSpotifyToken function : ${err}`)
     }
 }
 
@@ -101,7 +134,7 @@ const spotifySongURIs = async (token) => {
                             'Accept'        : 'application/json'
                         }
                     })
-                
+
                 if (!spotifySearch.ok) throw new Error('not fetching spotify search correctly')
                 const spotifySearchResult = await spotifySearch.json()
                 return spotifySearchResult
@@ -134,7 +167,7 @@ const spotifySongURIs = async (token) => {
  * function that removes all songs inside playlist
  */
  const removeSpotifyPlaylistSongs = async (token) => {
-    
+
     const spotifyPlaylistID = process.env.SPOTIFY_PLAYLIST_ID  
 
     try {
@@ -147,7 +180,7 @@ const spotifySongURIs = async (token) => {
                 },
                 body : 'tracks'
             })
-        
+
     } catch (err) {
         console.error("Error inside removeSpotifyPlaylistSongs : " + err)
     }
@@ -181,4 +214,4 @@ const addSpotifyPlaylistSongs = async (token) => {
     }
 }
 
-export {fetchSpotifyToken}
+export {fetchSpotifyToken, getSpotifyToken, }
