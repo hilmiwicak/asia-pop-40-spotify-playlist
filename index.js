@@ -4,6 +4,7 @@ import fetch from 'node-fetch'
 import fs from 'fs'
 import http from 'http'
 import puppeteer from 'puppeteer'
+import { URL } from 'url'
 
 /**
  * function that scrapes Asia Pop 40 's website .
@@ -44,7 +45,7 @@ const scrapeAP40 = async () => {
                 artists     : chartSongArtists,
                 spotifyURI  : ""
             }
-        
+
             charts.push(chartData)
         })
 
@@ -57,7 +58,7 @@ const scrapeAP40 = async () => {
 /** 
  * function that fetches spotify implicit grant token
  */
-const fetchSpotifyToken = async (redirectURI) => {
+const fetchSpotifyToken = async (redirectURL) => {
 
     const clientID = process.env.SPOTIFY_CLIENT_ID 
 
@@ -66,7 +67,7 @@ const fetchSpotifyToken = async (redirectURI) => {
             'https://accounts.spotify.com/authorize?' +
             'client_id=' + clientID +
             '&response_type=token' +
-            '&redirect_uri=' + redirectURI +
+            '&redirect_uri=' + redirectURL +
             '&scope=playlist-modify-public' 
 
         const spotifyTokenFetch =  await fetch(spotifyTokenURL)
@@ -78,34 +79,67 @@ const fetchSpotifyToken = async (redirectURI) => {
 }
 
 /**
- * function to take token from implicit grant flow
+ * function to perform login and take token from implicit grant flow
  */
-// const getSpotifyToken = async (urlTokenFetch = 'https://accounts.spotify.com/authorize?client_id=2a6b04c86b5b40ba9392878ad4cd3465&response_type=token&redirect_uri=http://localhost:3000/add-songs-spotify-playlist/&scope=playlist-modify-public') => {
-const getSpotifyToken = async (urlTokenFetch) => {
+const getSpotifyToken = async (urlTokenFetch, redirectURL) => {
 
+    urlTokenFetch = new URL(urlTokenFetch)
+    redirectURL = new URL(redirectURL)
     const spotifyEmail = process.env.SPOTIFY_EMAIL
     const spotifyPassword = process.env.SPOTIFY_PASSWORD
 
+    const browser = await puppeteer.launch({
+        headless : false,
+        devtools : true,
+    })
+
+    const page = await browser.newPage()
+    await page.setDefaultTimeout(0)
+
+    await page.goto(urlTokenFetch.toString())
+    await page.waitForSelector('input#login-username[name=username]')
+
+    await page.click('[name=remember]')
+    await page.type('input[name=username]', spotifyEmail, { delay : 300 })
+    await page.type('input[name=password]', spotifyPassword, { delay : 300 })
+    await page.click('button#login-button')
+
+    await page.waitForRequest(
+        (request) => {
+            const requestURL = new URL(request.url())
+            return requestURL.pathname === redirectURL.pathname && request.method() === 'POST'
+        }, {
+            timeout : 10000
+        }
+    ).
+    catch( (err) => { 
+        throw new Error(`Error inside on waitForRequest : ${err}`)
+    })
+
+    await browser.close()
+    await console.log(`End of puppeteer`)
+}
+
+/**
+ * function for searching one song uri
+ */
+const searchSpotifySongURI = async (token, searchQuery) => {
     try {
-        const browser = await puppeteer.launch({
-            headless : false,
-            devtools : true,
-        })
+        const spotifySearch = await 
+            fetch("https://api.spotify.com/v1/search?q=" + searchQuery + "&type=track&limit=1", {
+                method : "get",
+                headers : { 
+                    'Authorization' : "Bearer " + token,
+                    'Content-Type'  : 'application/json',
+                    'Accept'        : 'application/json'
+                }
+            })
 
-        const page = await browser.newPage()
-        await page.setDefaultTimeout(0)
-
-        await page.goto(urlTokenFetch)
-        await page.waitForSelector('input#login-username[name=username]')
-
-        await page.click('[name=remember]')
-        await page.type('input[name=username]', spotifyEmail, { delay : 300 })
-        await page.type('[name=password]', spotifyPassword, { delay : 300 })
-        await page.click('button#login-button')
-
-        await console.log(`End`)
+        if (!spotifySearch.ok) throw new Error('not fetching spotify search correctly')
+        const spotifySearchResult = await spotifySearch.json()
+        return spotifySearchResult
     } catch (err) {
-        console.error(`error inside getSpotifyToken function : ${err}`)
+        console.error("Error inside searchSpotifySongURI : " + searchQuery + err )
     }
 }
 
@@ -119,29 +153,6 @@ const spotifySongURIs = async (token) => {
     try {
         const chartsData = fs.readFileSync('./chart.json', 'utf8')
         let charts = JSON.parse(chartsData)
-
-        /**
-         * function for searching uri from each song
-         */
-        const searchSpotifySongURI = async (token, searchQuery) => {
-            try {
-                const spotifySearch = await 
-                    fetch("https://api.spotify.com/v1/search?q=" + searchQuery + "&type=track&limit=1", {
-                        method : "get",
-                        headers : { 
-                            'Authorization' : "Bearer " + token,
-                            'Content-Type'  : 'application/json',
-                            'Accept'        : 'application/json'
-                        }
-                    })
-
-                if (!spotifySearch.ok) throw new Error('not fetching spotify search correctly')
-                const spotifySearchResult = await spotifySearch.json()
-                return spotifySearchResult
-            } catch (err) {
-                console.error("Error inside searchSpotifySongURI : " + searchQuery + err )
-            }
-        }
 
         for(let song of charts){
             const artist = song.artists.join(' ')
@@ -214,4 +225,7 @@ const addSpotifyPlaylistSongs = async (token) => {
     }
 }
 
-export {fetchSpotifyToken, getSpotifyToken, }
+export {
+    fetchSpotifyToken, 
+    getSpotifyToken, 
+}

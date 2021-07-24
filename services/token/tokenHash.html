@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>token hash</title>
+</head>
+<body onload="autoSubmitForm()">
+    <h1>masuk token hash (ツ)</h1>
+    <!-- <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>  -->
+    <form id="form" method="POST" action="/get-token-hash">
+        <input id="input" type="hidden" name="access_token">
+    </form>
+    <script>
+        document.addEventListener('DOMContentLoaded', (event) => {
+            let hash = window.location.hash
+            hash = hash.replace(/#access_token=/, '')
+            hash = hash.replace(/&.+/, '')
+
+            const input = document.getElementById('input')
+            input.setAttribute('value', hash)
+
+            const form = document.getElementById('form')            
+            form.submit()
+        })
+    </script>
+</body>
+</html>

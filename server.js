@@ -1,55 +1,78 @@
 import http from 'http'
-import https from 'https'
 import 'dotenv/config'
-import { fetchSpotifyToken, getSpotifyToken, } from './index.js'
+import fs from 'fs'
+import { 
+    fetchSpotifyToken, 
+    getSpotifyToken, 
+} from './index.js'
 
 const HOST = process.env.HOST || 'localhost'
 const PORT = process.env.PORT || 3000
+let tokenSpotify = ''
 
 const serverHandler = async (req, res) => {
 
     const requestURL = new URL(req.url, `http://${req.headers.host}`) 
 
-    // initializing token
-    let token = ''
+    const redirectURLAfterLogin = `${requestURL.origin}/get-token-hash`
 
-    // GET http://HOST:PORT/
-    if(req.method === 'GET' && requestURL.pathname === '/'){
-        console.log('someone accessing root')
-        res.writeHead(200, 'OK', {
-            "Content-Type" : "text/plain"
+    // GET http://HOST:PORT/login-spotify/
+    if (req.method === 'GET' && requestURL.pathname === '/login-spotify'){
+        console.log('accessed /login-spotify')
+        console.log('taking you to the redirected url....')
+
+        const responseToken = await fetchSpotifyToken(redirectURLAfterLogin)
+        const responseTokenURL = await responseToken.url
+
+        res.writeHead(302, 'Moving you to the redirected URL', {
+            'location' : responseTokenURL
         })
-        res.write(`${requestURL.searchParams.toString()}\n\n`)
-        res.end('End of the message')
-   } 
+        res.end()
 
-    // GET http://HOST:PORT/get-spotify-token/
-    else if (req.method === 'GET' && requestURL.pathname === '/get-spotify-token'){
-        try {
-            console.log('accessed /get-spotify-token')
-            console.log('taking redirected url....')
+        getSpotifyToken(responseTokenURL, redirectURLAfterLogin)
+    } 
 
-            const responseToken = await fetchSpotifyToken(`${requestURL.origin}/add-songs-spotify-playlist`)
-            const responseTokenURL = await responseToken.url
+    // GET http://HOST:PORT/get-token-hash
+    else if (req.method === 'GET' && requestURL.pathname === '/get-token-hash'){
+        console.log('accessed /get-token-hash')
 
-            res.writeHead(302, 'Moving you to the redirected URL', {
-                'location' : responseTokenURL
-            })
-            res.end()
-            getSpotifyToken(responseTokenURL)
-        } catch (err) {
-            console.error(`Error inside /get-spotify-token/ path : ${err}`)
-        }
-   } 
+        res.writeHead(201, 'OK', {
+            "Content-Type" : "text/html",
+        })
+        const fileHTML = fs.readFileSync('./services/token/tokenHash.html')
+        res.write(fileHTML)
+        res.end()
+    }
 
-   // POST http://HOST:PORT/add-songs-spotify-playlist/
-   else if (req.method === 'GET' && requestURL.pathname === '/add-songs-spotify-playlist'){
+    // POST http://HOST:PORT/get-token-hash
+    // taking the token to the server after submitting post request from GET /get-token-hash
+    else if (req.method === 'POST' && requestURL.pathname === '/get-token-hash'){
+        console.log('accessed /get-token-hash')
+
+        req.on('data', (chunk) => {
+            tokenSpotify += chunk
+        })
+
+        req.on('end', () => {
+            console.log('end of request POST /get-token-hash')
+            tokenSpotify = new URLSearchParams(tokenSpotify)
+            tokenSpotify = tokenSpotify.get('access_token')
+            console.log(`body POST : ${tokenSpotify}`)
+        })
+
+        res.writeHead(201, 'OK' )
+        res.write('<html><body><h1>masuk post</h1></body></html>')
+        res.end()
+    }
+
+    // POST http://HOST:PORT/add-songs-spotify-playlist/
+    else if (req.method === 'GET' && requestURL.pathname === '/add-songs-spotify-playlist'){
         console.log('someone accessing /add-songs-spotify-playlist')
-        res.writeHead(200, 'OK', {
+        res.writeHead(201, 'OK', {
             "Content-Type" : "text/html"
         })
-        res.write('<html><body><h1>test</h1></body></html>')
-        // res.end(fetchSpotifyToken(requestURL.origin))
+        res.write('')
+        res.end()
     } 
 
     // else {
