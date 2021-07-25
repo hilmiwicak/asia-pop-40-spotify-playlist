@@ -8,13 +8,13 @@ import {
 
 const HOST = process.env.HOST || 'localhost'
 const PORT = process.env.PORT || 3000
-let tokenSpotify = ''
 
 const serverHandler = async (req, res) => {
 
     const requestURL = new URL(req.url, `http://${req.headers.host}`) 
 
     const redirectURLAfterLogin = `${requestURL.origin}/get-token-hash`
+    let tokenSpotify = ''
 
     // GET http://HOST:PORT/login-spotify/
     if (req.method === 'GET' && requestURL.pathname === '/login-spotify'){

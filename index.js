@@ -2,7 +2,6 @@ import 'dotenv/config.js'
 import cheerio from 'cheerio'
 import fetch from 'node-fetch'
 import fs from 'fs'
-import http from 'http'
 import puppeteer from 'puppeteer'
 import { URL } from 'url'
 
@@ -111,9 +110,9 @@ const getSpotifyToken = async (urlTokenFetch, redirectURL) => {
         }, {
             timeout : 10000
         }
-    ).
-    catch( (err) => { 
-        throw new Error(`Error inside on waitForRequest : ${err}`)
+    )
+    .catch( (err) => { 
+        new Error(`Error inside on waitForRequest : ${err}`)
     })
 
     await browser.close()
