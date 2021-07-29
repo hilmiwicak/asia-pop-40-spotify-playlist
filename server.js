@@ -4,7 +4,7 @@ import fs from 'fs'
 import { 
     fetchSpotifyToken, 
     getSpotifyToken, 
-} from './index.js'
+} from './functions.js'
 
 const HOST = process.env.HOST || 'localhost'
 const PORT = process.env.PORT || 3000
@@ -22,7 +22,7 @@ const serverHandler = async (req, res) => {
         console.log('taking you to the redirected url....')
 
         const responseToken = await fetchSpotifyToken(redirectURLAfterLogin)
-        const responseTokenURL = await responseToken.url
+        const responseTokenURL = await responseToken
 
         res.writeHead(302, 'Moving you to the redirected URL', {
             'location' : responseTokenURL
@@ -57,7 +57,7 @@ const serverHandler = async (req, res) => {
             console.log('end of request POST /get-token-hash')
             tokenSpotify = new URLSearchParams(tokenSpotify)
             tokenSpotify = tokenSpotify.get('access_token')
-            console.log(`body POST : ${tokenSpotify}`)
+            console.log(`token : ${tokenSpotify}`)
         })
 
         res.writeHead(201, 'OK' )
@@ -65,26 +65,6 @@ const serverHandler = async (req, res) => {
         res.end()
     }
 
-    // POST http://HOST:PORT/add-songs-spotify-playlist/
-    else if (req.method === 'GET' && requestURL.pathname === '/add-songs-spotify-playlist'){
-        console.log('someone accessing /add-songs-spotify-playlist')
-        res.writeHead(201, 'OK', {
-            "Content-Type" : "text/html"
-        })
-        res.write('')
-        res.end()
-    } 
-
-    // else {
-    //     res.statusCode = 404
-    //     res.setHeader('Content-Type', 'text/html')
-    //     res.end('
-    //         <html>
-    //             <body>
-    //                 <h1>ga nemu cok</h1>
-    //             </body>
-    //         </html>')
-    // }
 }
 
 const server = http.createServer(serverHandler)
