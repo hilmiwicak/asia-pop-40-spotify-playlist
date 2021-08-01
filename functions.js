@@ -4,6 +4,7 @@ import fetch from 'node-fetch'
 import fs from 'fs'
 import puppeteer from 'puppeteer'
 import { URL } from 'url'
+import { spawn } from 'child_process'
 
 const spotifyPassword = process.env.SPOTIFY_PASSWORD
 const spotifyEmail = process.env.SPOTIFY_EMAIL
@@ -11,9 +12,9 @@ const clientID = process.env.SPOTIFY_CLIENT_ID
 const playlistID = process.env.SPOTIFY_PLAYLIST_ID
 
 /**
- * function that scrapes Asia Pop 40 's website .
+ * function that scrapes Asia Pop 40's website.
  * takes texts from classes "chart-track-<title or rank or artists>" ,
- * change them into array, changes them into json object, and returns the json
+ * change them into array, and returns the array object (json)
  */
 const scrapeAP40 = async () => {
 
@@ -28,6 +29,7 @@ const scrapeAP40 = async () => {
         AP40HTML = await AP40Fetch.text()
     } catch (err) {
         console.error("Error inside scrapeAP40 : " + err)
+        return
     }
 
     const $ = cheerio.load(AP40HTML)
@@ -58,7 +60,28 @@ const scrapeAP40 = async () => {
         songs.push(chartData)
     })
 
-    return JSON.stringify(songs) 
+    return songs
+}
+
+/**
+ * function to spawn a server child processs
+ * 
+ * @returns 
+ */
+const startServer = () => {
+    return new Promise((resolve, reject) => {
+        const server = spawn('node', ['server.js'])
+
+        server.stdout.on('data', (data) => {
+            console.log(`output server : ${data}`)
+            resolve()
+        })
+
+        server.stderr.on('data', (dataErr) => {
+            console.error(`error server : ${dataErr}`)
+        })
+
+    })
 }
 
 /** 
@@ -115,6 +138,8 @@ const getSpotifyToken = async (urlTokenFetch, redirectURL) => {
     )
     .catch( (err) => { 
         new Error(`Error inside on waitForRequest : ${err}`)
+        await browser.close()
+        return
     })
 
     await browser.close()
@@ -122,23 +147,69 @@ const getSpotifyToken = async (urlTokenFetch, redirectURL) => {
 }
 
 /**
- * function for searching one song uri
+ * function that removes all songs inside playlist
+ * it reads uris.json, and then sends them to the spotify api
+ * to remove the songs from the list
  */
-const searchSpotifySongURI = async (token, searchQuery) => {
+const removeSpotifyPlaylistSongs = async (token) => {
+
+    let songURIs = fs.readFileSync('./uris.json', 'utf8')
+    songURIs = JSON.parse(songURIs)
+
+    let tracks = []
+
+    songURIs.forEach((uri) => {
+        let trackURI = {
+            "uri" : uri
+        }
+        tracks.push(trackURI)
+    })
+
+    let dataTracks = {
+        'tracks' : tracks
+    }
+
     try {
-        const spotifySearch = await fetch("https://api.spotify.com/v1/search?q=" + searchQuery + "&type=track&limit=1", {
+        const removeSongs = await fetch("https://api.spotify.com/v1/playlists/" + playlistID + "/tracks", {
+            method : "delete",
             headers : { 
                 'Authorization' : "Bearer " + token,
                 'Content-Type'  : 'application/json',
-                'Accept'        : 'application/json'
-            }
+            },
+            body : JSON.stringify(dataTracks)
         })
 
-        if (!spotifySearch.ok) throw new Error('not fetching spotify search correctly')
-        const spotifySearchResult = await spotifySearch.json()
+    } catch (err) {
+        console.error("Error inside removeSpotifyPlaylistSongs : " + err)
+    }
+}
+
+/**
+ * function for searching one song uri
+ * if the song doesn't exist in spotify, it puts mr. brightside song
+ */
+const searchSpotifySongURI = async (token, searchQuery) => {
+    const spotifySearch = await fetch("https://api.spotify.com/v1/search?q=" + searchQuery + "&type=track&limit=1", {
+        headers : { 
+            'Authorization' : "Bearer " + token,
+            'Content-Type'  : 'application/json',
+            'Accept'        : 'application/json'
+        }
+    })
+
+    if (!spotifySearch.ok) {
+        console.error('not fetching spotify search correctly')
+        return
+    }
+
+    const spotifySearchResult = await spotifySearch.json()
+
+    try {
+        if (!spotifySearchResult.tracks.items[0].uri) throw new Error('no uri')
         return spotifySearchResult.tracks.items[0].uri
     } catch (err) {
-        console.error("Error inside searchSpotifySongURI : " + searchQuery + err )
+        console.error(`No uri while searching : ${searchQuery} : ${err}`)
+        return 'spotify:track:7oK9VyNzrYvRFo7nQEYkWN'
     }
 }
 
@@ -149,58 +220,29 @@ const searchSpotifySongURI = async (token, searchQuery) => {
  */
 const searchSpotifySongURIs = async (token, songs) => {
 
+    let songURIs = []
+
     for(let song of songs){
         const artist = song.artists.join(' ')
         const title = song.title
         const searchQuery = encodeURI(title + artist)
 
-        // nanti bikin array baru, gaperlu pake array yg lama
-        try {
-            const searchSongResult = await searchSpotifySongURI(token, searchQuery)
-            song.spotifyURI = searchSongResult
-        } catch (err) { 
-            // if it doesn't exist any song inside spotify, it puts mr. brightside's song uri
-            song.spotifyURI = 'spotify:track:7oK9VyNzrYvRFo7nQEYkWN'
-        }
+        const searchSongResult = await searchSpotifySongURI(token, searchQuery)
+        songURIs.push(searchSongResult)
     }
 
-    return JSON.stringify(songs)
-}
-
-/**
- * function that removes all songs inside playlist
- */
- const removeSpotifyPlaylistSongs = async (token) => {
-
-    // read uris.json
-
-    try {
-        const removeSongs = await fetch("https://api.spotify.com/v1/playlists/" + playlistID + "/tracks", {
-            method : "delete",
-            headers : { 
-                'Authorization' : "Bearer " + token,
-                'Content-Type'  : 'application/json',
-            },
-            body : 'tracks'
-        })
-
-    } catch (err) {
-        console.error("Error inside removeSpotifyPlaylistSongs : " + err)
-    }
+    fs.writeFileSync('./uris.json', JSON.stringify(songURIs), 'utf8')
+    return songURIs
 }
 
 /**
  * function that add all songs to the playlist
  */
-const addSpotifyPlaylistSongs = async (token) => {
+const addSpotifyPlaylistSongs = async (token, songURIs) => {
 
-    const chartsData = fs.readFileSync('./chart.json', 'utf8')
-    let charts = JSON.parse(chartsData)
-
-    let URIs = []
-    charts.forEach( (chart) => {
-        URIs.push(chart.spotifyURI)
-    })
+    const dataURIs = {
+        uris : songURIs,
+    }
 
     try {
         const addSongs = await fetch("https://api.spotify.com/v1/playlists/" + playlistID + "/tracks", {
@@ -209,6 +251,7 @@ const addSpotifyPlaylistSongs = async (token) => {
                 'Authorization' : "Bearer " + token,
                 'Content-Type'  : 'application/json',
             },
+            body : JSON.stringify(dataURIs)
         })
     } catch (err) {
         console.error("Error inside addSpotifyPlaylistSongs : " + err)
@@ -217,9 +260,10 @@ const addSpotifyPlaylistSongs = async (token) => {
 
 export {
     scrapeAP40,
+    startServer,
     fetchSpotifyToken, 
     getSpotifyToken, 
-    spotifySongURIs,
-    addSpotifyPlaylistSongs,
     removeSpotifyPlaylistSongs,
+    searchSpotifySongURIs,
+    addSpotifyPlaylistSongs,
 }
