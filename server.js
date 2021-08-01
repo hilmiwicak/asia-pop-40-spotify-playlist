@@ -57,11 +57,19 @@ const serverHandler = async (req, res) => {
             console.log('end of request POST /get-token-hash')
             tokenSpotify = new URLSearchParams(tokenSpotify)
             tokenSpotify = tokenSpotify.get('access_token')
-            console.log(`token : ${tokenSpotify}`)
         })
 
+        //  I DON'T KNOW HOW TO SEND FROM SERVER TO index.js
+        // MAYBE I CAN DO THIS WITH PUPPETEER
         res.writeHead(201, 'OK' )
-        res.write('<html><body><h1>masuk post</h1></body></html>')
+        res.write(tokenSpotify)
+        res.end()
+    }
+
+    else {
+        console.log('masuk else')
+        res.writeHead(201, 'OK')
+        res.write('masuk else')
         res.end()
     }
 
