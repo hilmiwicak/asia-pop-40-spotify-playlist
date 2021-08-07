@@ -65,12 +65,13 @@ const scrapeAP40 = async () => {
 
 /**
  * function to spawn a server child processs
+ * dies after 5 minutes
  * 
- * @returns 
+ * @returns promise resolve(<nothing>)
  */
 const startServer = () => {
     return new Promise((resolve, reject) => {
-        const server = spawn('node', ['server.js'])
+        const server = spawn('node', ['server.js'], { timeout: 300000 })
 
         server.stdout.on('data', (data) => {
             console.log(`output server : ${data}`)
@@ -79,71 +80,61 @@ const startServer = () => {
 
         server.stderr.on('data', (dataErr) => {
             console.error(`error server : ${dataErr}`)
+            reject(dataErr)
         })
 
     })
 }
 
-/** 
- * function that fetches spotify implicit grant token
+/**
+ * function to perform login and take token from implicit grant flow
+ * 
+ * @returns promise with resolve token / reject undefined
  */
-const fetchSpotifyToken = async (redirectURL) => {
+const getSpotifyToken = () => {
+    return new Promise( async (resolve, reject) => {
 
-    try {
+        console.log('running puppeteer to get the token')
+
+        const redirectURL = new URL('http://localhost:3000/get-token-hash')
         const spotifyTokenURL =
             'https://accounts.spotify.com/authorize?' +
             'client_id=' + clientID +
             '&response_type=token' +
             '&redirect_uri=' + redirectURL +
-            '&scope=playlist-modify-public' 
+            '&scope=playlist-modify-public'
 
-        const spotifyTokenFetch =  await fetch(spotifyTokenURL)
-        if (!spotifyTokenFetch.ok) throw new Error('not fetching spotify token correctly')
-        return spotifyTokenFetch.url
-    } catch (err) {
-        console.error("Error inside fetchSpotifyToken : " + err)
-    }
-}
+        const browser = await puppeteer.launch({headless: false, devtools: true})
 
-/**
- * function to perform login and take token from implicit grant flow
- */
-const getSpotifyToken = async (urlTokenFetch, redirectURL) => {
+        const page = await browser.newPage()
+        await page.setDefaultTimeout(0)
 
-    urlTokenFetch = new URL(urlTokenFetch)
-    redirectURL = new URL(redirectURL)
+        await page.goto(spotifyTokenURL, {
+            waitUntil: "networkidle2"
+        })
 
-    const browser = await puppeteer.launch({
-        headless : false,
-        devtools : true,
+        await page.click('[name=remember]')
+        await page.type('input[name=username]', spotifyEmail, { delay : 300 })
+        await page.type('input[name=password]', spotifyPassword, { delay : 300 })
+        await page.click('button#login-button')
+
+        await page.waitForNavigation({
+            timeout: 3000,
+            waitUntil: "networkidle2"
+        })
+
+        try {
+            let token = await page.content()
+            await browser.close()
+
+            token = token.replace(/<([^>]+)>/gi, '') // strip tags
+            resolve(token)
+        } catch (err) {
+            console.error(`error inside content ${reject}`)
+            browser.close()
+            reject(undefined)
+        }
     })
-
-    const page = await browser.newPage()
-    await page.setDefaultTimeout(0)
-
-    await page.goto(urlTokenFetch.toString())
-    await page.waitForSelector('input#login-username[name=username]')
-
-    await page.click('[name=remember]')
-    await page.type('input[name=username]', spotifyEmail, { delay : 300 })
-    await page.type('input[name=password]', spotifyPassword, { delay : 300 })
-
-    await page.click('button#login-button')
-
-    await page.waitForRequest(
-        (request) => {
-            const requestURL = new URL(request.url())
-            return requestURL.pathname === redirectURL.pathname && request.method() === 'POST'
-        }, { timeout : 10000 }
-    )
-    .catch( (err) => { 
-        new Error(`Error inside on waitForRequest : ${err}`)
-        await browser.close()
-        return
-    })
-
-    await browser.close()
-    await console.log(`End of puppeteer`)
 }
 
 /**
@@ -261,7 +252,6 @@ const addSpotifyPlaylistSongs = async (token, songURIs) => {
 export {
     scrapeAP40,
     startServer,
-    fetchSpotifyToken, 
     getSpotifyToken, 
     removeSpotifyPlaylistSongs,
     searchSpotifySongURIs,

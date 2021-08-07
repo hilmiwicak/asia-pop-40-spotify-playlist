@@ -27,14 +27,24 @@ import http from 'http'
  * edit description
  */
 
+/**
+ * NOTES :
+ * how do you kill server child process not through timeout?
+ * dynamic redirectURL inside getSpotifyToken
+ */
+
 (async () => {
-    let token
+    let token, chartSongs
     let chartSongs = scrapeAP40()
 
-    startServer()
-    .then( res => {
-        // http.get('http://localhost:3000/login-spotify')
-        http.get('http://localhost:3000/')
+    await Promise.all([
+        getSpotifyToken(),
+        startServer(),
+    ])
+    .then( messages => {
+        token = messages[0]
     })
+
+    console.log(token)
 
 })()
