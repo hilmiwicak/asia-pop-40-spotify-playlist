@@ -6,7 +6,6 @@ import {
     searchSpotifySongURIs,
     addSpotifyPlaylistSongs,
 } from './functions.js'
-import http from 'http'
 
 /**
  * supposed order of execution
@@ -31,20 +30,27 @@ import http from 'http'
  * NOTES :
  * how do you kill server child process not through timeout?
  * dynamic redirectURL inside getSpotifyToken
+ * parallel search spotify track's URI
  */
 
 (async () => {
-    let token, chartSongs
-    let chartSongs = scrapeAP40()
+    let token, chartSongs, songsURI
 
-    await Promise.all([
-        getSpotifyToken(),
-        startServer(),
-    ])
-    .then( messages => {
-        token = messages[0]
-    })
+    chartSongs = scrapeAP40()
 
-    console.log(token)
+    startServer()
+
+    try {
+        token = await getSpotifyToken()
+        console.log(token)
+    } catch (err) {
+        console.error(err)
+        return
+    }
+
+    removeSpotifyPlaylistSongs(token)
+
+    songsURI = await searchSpotifySongURIs(token, chartSongs)
+    addSpotifyPlaylistSongs(token, songsURI)
 
 })()

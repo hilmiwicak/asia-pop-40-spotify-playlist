@@ -17,73 +17,75 @@ const playlistID = process.env.SPOTIFY_PLAYLIST_ID
  * change them into array, and returns the array object (json)
  */
 const scrapeAP40 = async () => {
+    return new Promise( async (resolve, reject) => {
 
-    console.log(`Scraping Asia Pop 40's webiste...`)
+        console.log(`Scraping Asia Pop 40's webiste...`)
 
-    let AP40HTML
-    let songs = []
+        let AP40HTML
+        let songs = []
 
-    try {
-        const AP40Fetch = await fetch("http://asiapop40.com")
-        if(!AP40Fetch.ok) throw new Error('not fetching asiapop40 correctly') 
-        AP40HTML = await AP40Fetch.text()
-    } catch (err) {
-        console.error("Error inside scrapeAP40 : " + err)
-        return
-    }
-
-    const $ = cheerio.load(AP40HTML)
-
-    $('.accordion-item').each((i, chartItem) => {
-        let chartNode = $(chartItem)
-
-        let chartSongRank = chartNode.find('.chart-track-rank').text()
-
-        // find the title, removing the '-', and then get the text
-        let chartSongTitle = chartNode.find('.chart-track-title').children().remove().end().text()
-        chartSongTitle = chartSongTitle.replace('ft. ', '')
-        chartSongTitle = chartSongTitle.replace(/[\[\]]+/g, '')
-
-        let chartSongArtists = []
-        chartNode.find('.chart-artist-title').children().each((i, artist) => {
-            let artistNode = $(artist)
-            chartSongArtists.push(artistNode.text())
-        })
-
-        let chartData = {
-            rank        : chartSongRank,
-            title       : chartSongTitle,
-            artists     : chartSongArtists,
-            spotifyURI  : ""
+        try {
+            const AP40Fetch = await fetch("http://asiapop40.com")
+            if(!AP40Fetch.ok) throw new Error('not fetching asiapop40 correctly') 
+            AP40HTML = await AP40Fetch.text()
+        } catch (err) {
+            console.error("Error inside scrapeAP40 : " + err)
+            reject()
         }
 
-        songs.push(chartData)
-    })
+        const $ = cheerio.load(AP40HTML)
 
-    return songs
+        $('.accordion-item').each((i, chartItem) => {
+            let chartNode = $(chartItem)
+
+            let chartSongRank = chartNode.find('.chart-track-rank').text()
+
+            // find the title, removing the '-', and then get the text
+            let chartSongTitle = chartNode.find('.chart-track-title').children().remove().end().text()
+            chartSongTitle = chartSongTitle.replace('ft. ', '')
+            chartSongTitle = chartSongTitle.replace(/[\[\]]+/g, '')
+
+            let chartSongArtists = []
+            chartNode.find('.chart-artist-title').children().each((i, artist) => {
+                let artistNode = $(artist)
+                chartSongArtists.push(artistNode.text())
+            })
+
+            let chartData = {
+                rank        : chartSongRank,
+                title       : chartSongTitle,
+                artists     : chartSongArtists,
+                spotifyURI  : ""
+            }
+
+            songs.push(chartData)
+        })
+
+        console.log(`Done scraping Asia Pop 40's webiste`)
+        resolve(songs)
+    })
 }
 
 /**
  * function to spawn a server child processs
  * dies after 5 minutes
  * 
- * @returns promise resolve(<nothing>)
  */
 const startServer = () => {
-    return new Promise((resolve, reject) => {
-        const server = spawn('node', ['server.js'], { timeout: 300000 })
+    const server = spawn('node', ['server.js'])
 
-        server.stdout.on('data', (data) => {
-            console.log(`output server : ${data}`)
-            resolve()
-        })
-
-        server.stderr.on('data', (dataErr) => {
-            console.error(`error server : ${dataErr}`)
-            reject(dataErr)
-        })
-
+    server.stdout.on('data', (data) => {
+        console.log(`output server : ${data}`)
     })
+
+    server.stderr.on('data', (dataErr) => {
+        console.error(`error server : ${dataErr}`)
+    })
+
+    setTimeout(() => {
+        server.kill()
+    }, 60000)
+
 }
 
 /**
@@ -94,7 +96,7 @@ const startServer = () => {
 const getSpotifyToken = () => {
     return new Promise( async (resolve, reject) => {
 
-        console.log('running puppeteer to get the token')
+        console.log(`Running puppeteer to get the token ...`)
 
         const redirectURL = new URL('http://localhost:3000/get-token-hash')
         const spotifyTokenURL =
@@ -104,7 +106,7 @@ const getSpotifyToken = () => {
             '&redirect_uri=' + redirectURL +
             '&scope=playlist-modify-public'
 
-        const browser = await puppeteer.launch({headless: false, devtools: true})
+        const browser = await puppeteer.launch()
 
         const page = await browser.newPage()
         await page.setDefaultTimeout(0)
@@ -118,16 +120,23 @@ const getSpotifyToken = () => {
         await page.type('input[name=password]', spotifyPassword, { delay : 300 })
         await page.click('button#login-button')
 
-        await page.waitForNavigation({
-            timeout: 3000,
-            waitUntil: "networkidle2"
-        })
+        try {
+            await page.waitForNavigation({
+                timeout: 10000,
+                waitUntil: "networkidle2"
+            })
+
+        } catch (err) {
+            console.error(`Error waitForNavigation : ${err}`)
+            reject(err)
+        }
 
         try {
             let token = await page.content()
             await browser.close()
 
             token = token.replace(/<([^>]+)>/gi, '') // strip tags
+            console.log(`Done taking token`)
             resolve(token)
         } catch (err) {
             console.error(`error inside content ${reject}`)
@@ -143,36 +152,43 @@ const getSpotifyToken = () => {
  * to remove the songs from the list
  */
 const removeSpotifyPlaylistSongs = async (token) => {
+    return new Promise( async (resolve, reject) => {
 
-    let songURIs = fs.readFileSync('./uris.json', 'utf8')
-    songURIs = JSON.parse(songURIs)
+        console.log(`Removing songs on spotify playlist...`)
 
-    let tracks = []
+        let songURIs = fs.readFileSync('./uris.json', 'utf8')
+        songURIs = JSON.parse(songURIs)
 
-    songURIs.forEach((uri) => {
-        let trackURI = {
-            "uri" : uri
-        }
-        tracks.push(trackURI)
-    })
+        let tracks = []
 
-    let dataTracks = {
-        'tracks' : tracks
-    }
-
-    try {
-        const removeSongs = await fetch("https://api.spotify.com/v1/playlists/" + playlistID + "/tracks", {
-            method : "delete",
-            headers : { 
-                'Authorization' : "Bearer " + token,
-                'Content-Type'  : 'application/json',
-            },
-            body : JSON.stringify(dataTracks)
+        songURIs.forEach((uri) => {
+            let trackURI = {
+                "uri" : uri
+            }
+            tracks.push(trackURI)
         })
 
-    } catch (err) {
-        console.error("Error inside removeSpotifyPlaylistSongs : " + err)
-    }
+        let dataTracks = {
+            'tracks' : tracks
+        }
+
+        try {
+            await fetch("https://api.spotify.com/v1/playlists/" + playlistID + "/tracks", {
+                method : "delete",
+                headers : { 
+                    'Authorization' : "Bearer " + token,
+                    'Content-Type'  : 'application/json',
+                },
+                body : JSON.stringify(dataTracks)
+            })
+            console.log(`Done removing songs`)
+            resolve()
+
+        } catch (err) {
+            console.error("Error inside removeSpotifyPlaylistSongs : " + err)
+            reject()
+        }
+    })
 }
 
 /**
@@ -210,43 +226,55 @@ const searchSpotifySongURI = async (token, searchQuery) => {
  * and put them into the array, change them into json
  */
 const searchSpotifySongURIs = async (token, songs) => {
+    return new Promise( async (resolve, reject) => {
 
-    let songURIs = []
+        console.log(`Searching for track's URI in spotify...`)
 
-    for(let song of songs){
-        const artist = song.artists.join(' ')
-        const title = song.title
-        const searchQuery = encodeURI(title + artist)
+        let songURIs = []
 
-        const searchSongResult = await searchSpotifySongURI(token, searchQuery)
-        songURIs.push(searchSongResult)
-    }
+        for(let song of songs){
+            const artist = song.artists.join(' ')
+            const title = song.title
+            const searchQuery = encodeURI(title + artist)
 
-    fs.writeFileSync('./uris.json', JSON.stringify(songURIs), 'utf8')
-    return songURIs
+            const searchSongResult = await searchSpotifySongURI(token, searchQuery)
+            songURIs.push(searchSongResult)
+        }
+
+        fs.writeFileSync('./uris.json', JSON.stringify(songURIs), 'utf8')
+        console.log(`Done Searching`)
+        resolve(songURIs)
+    })
 }
 
 /**
  * function that add all songs to the playlist
  */
 const addSpotifyPlaylistSongs = async (token, songURIs) => {
+    return new Promise( async (resolve, reject) => {
 
-    const dataURIs = {
-        uris : songURIs,
-    }
+        console.log('Adding searched songs to spotify playlist ...')
 
-    try {
-        const addSongs = await fetch("https://api.spotify.com/v1/playlists/" + playlistID + "/tracks", {
-            method : "post",
-            headers : { 
-                'Authorization' : "Bearer " + token,
-                'Content-Type'  : 'application/json',
-            },
-            body : JSON.stringify(dataURIs)
-        })
-    } catch (err) {
-        console.error("Error inside addSpotifyPlaylistSongs : " + err)
-    }
+        const dataURIs = {
+            uris : songURIs,
+        }
+
+        try {
+            await fetch("https://api.spotify.com/v1/playlists/" + playlistID + "/tracks", {
+                method : "post",
+                headers : { 
+                    'Authorization' : "Bearer " + token,
+                    'Content-Type'  : 'application/json',
+                },
+                body : JSON.stringify(dataURIs)
+            })
+            console.log(`Done adding searched songs`)
+            resolve()
+        } catch (err) {
+            console.error("Error inside addSpotifyPlaylistSongs : " + err)
+            reject()
+        }
+    })
 }
 
 export {
