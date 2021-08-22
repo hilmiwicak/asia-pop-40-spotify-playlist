@@ -26,7 +26,7 @@ const scrapeAP40 = async () => {
 
         try {
             const AP40Fetch = await fetch("http://asiapop40.com")
-            if(!AP40Fetch.ok) throw new Error('not fetching asiapop40 correctly') 
+            if(!AP40Fetch.ok) throw new Error('not fetching asiapop40 correctly')
             AP40HTML = await AP40Fetch.text()
         } catch (err) {
             console.error("Error inside scrapeAP40 : " + err)
@@ -37,8 +37,6 @@ const scrapeAP40 = async () => {
 
         $('.accordion-item').each((i, chartItem) => {
             let chartNode = $(chartItem)
-
-            let chartSongRank = chartNode.find('.chart-track-rank').text()
 
             // find the title, removing the '-', and then get the text
             let chartSongTitle = chartNode.find('.chart-track-title').children().remove().end().text()
@@ -52,7 +50,6 @@ const scrapeAP40 = async () => {
             })
 
             let chartData = {
-                rank        : chartSongRank,
                 title       : chartSongTitle,
                 artists     : chartSongArtists,
                 spotifyURI  : ""
@@ -106,7 +103,7 @@ const getSpotifyToken = () => {
             '&redirect_uri=' + redirectURL +
             '&scope=playlist-modify-public'
 
-        const browser = await puppeteer.launch()
+        const browser = await puppeteer.launch({headless: false, devtools: true})
 
         const page = await browser.newPage()
         await page.setDefaultTimeout(0)
@@ -115,9 +112,11 @@ const getSpotifyToken = () => {
             waitUntil: "networkidle2"
         })
 
-        await page.click('[name=remember]')
-        await page.type('input[name=username]', spotifyEmail, { delay : 300 })
-        await page.type('input[name=password]', spotifyPassword, { delay : 300 })
+        await page.waitForSelector('input#login-username[name=username]')
+
+        await page.type('input#login-username[name=username]', spotifyEmail, { delay : 300 })
+        await page.type('input#login-password[name=passsword]', spotifyPassword, { delay : 300 })
+        await page.click('input#login-remember[name=remember]')
         await page.click('button#login-button')
 
         try {
@@ -125,7 +124,6 @@ const getSpotifyToken = () => {
                 timeout: 10000,
                 waitUntil: "networkidle2"
             })
-
         } catch (err) {
             console.error(`Error waitForNavigation : ${err}`)
             reject(err)

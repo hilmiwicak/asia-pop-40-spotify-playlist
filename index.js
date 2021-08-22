@@ -36,7 +36,7 @@ import {
 (async () => {
     let token, chartSongs, songsURI
 
-    chartSongs = scrapeAP40()
+    chartSongs = await scrapeAP40()
 
     startServer()
 
