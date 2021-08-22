@@ -115,8 +115,8 @@ const getSpotifyToken = () => {
         await page.waitForSelector('input#login-username[name=username]')
 
         await page.type('input#login-username[name=username]', spotifyEmail, { delay : 300 })
-        await page.type('input#login-password[name=passsword]', spotifyPassword, { delay : 300 })
-        await page.click('input#login-remember[name=remember]')
+        await page.type('input#login-password', spotifyPassword, { delay : 300 })
+        await page.click('input#login-remember')
         await page.click('button#login-button')
 
         try {
