@@ -25,7 +25,7 @@ const scrapeAP40 = async () => {
         let songs = []
 
         try {
-            const AP40Fetch = await fetch("http://asiapop40.com")
+            const AP40Fetch = await fetch("https://asiapop40.com")
             if(!AP40Fetch.ok) throw new Error('not fetching asiapop40 correctly')
             AP40HTML = await AP40Fetch.text()
         } catch (err) {
