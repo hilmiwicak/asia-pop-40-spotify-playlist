@@ -69,7 +69,7 @@ const scrapeAP40 = async () => {
  * 
  */
 const startServer = () => {
-    const server = spawn('node', ['server.js'])
+    const server = spawn('node', ['./src/server.js'])
 
     server.stdout.on('data', (data) => {
         console.log(`output server : ${data}`)
@@ -154,7 +154,7 @@ const removeSpotifyPlaylistSongs = async (token) => {
 
         console.log(`Removing songs on spotify playlist...`)
 
-        let songURIs = fs.readFileSync('./uris.json', 'utf8')
+        let songURIs = fs.readFileSync(process.cwd() + '/src/uris.json', 'utf8')
         songURIs = JSON.parse(songURIs)
 
         let tracks = []
@@ -239,7 +239,7 @@ const searchSpotifySongURIs = async (token, songs) => {
             songURIs.push(searchSongResult)
         }
 
-        fs.writeFileSync('./uris.json', JSON.stringify(songURIs), 'utf8')
+        fs.writeFileSync(process.cwd() + '/src/uris.json', JSON.stringify(songURIs), 'utf8')
         console.log(`Done Searching`)
         resolve(songURIs)
     })

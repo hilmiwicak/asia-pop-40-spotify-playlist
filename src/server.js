@@ -19,7 +19,7 @@ const serverHandler = async (req, res) => {
         res.writeHead(201, 'OK', {
             "Content-Type" : "text/html",
         })
-        const fileHTML = fs.readFileSync('./services/token/tokenHash.html')
+        const fileHTML = fs.readFileSync(process.cwd() + '/src/services/token/tokenHash.html')
         res.write(fileHTML)
         res.end()
     }
