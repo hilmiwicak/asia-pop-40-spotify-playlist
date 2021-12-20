@@ -5,6 +5,7 @@ import {
     removeSpotifyPlaylistSongs,
     searchSpotifySongURIs,
     addSpotifyPlaylistSongs,
+    updateSpotifyPlaylistTitle,
 } from './functions.js';
 
 /**
@@ -52,5 +53,7 @@ import {
 
     songsURI = await searchSpotifySongURIs(token, chartSongs);
     addSpotifyPlaylistSongs(token, songsURI);
+
+    updateSpotifyPlaylistTitle(token);
 
 })()

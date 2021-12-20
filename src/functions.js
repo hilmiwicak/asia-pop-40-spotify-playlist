@@ -5,6 +5,7 @@ import fs from 'fs';
 import puppeteer from 'puppeteer';
 import { URL } from 'url';
 import { spawn } from 'child_process';
+import { nth, monthToHuman } from "./services/dateHelper.js";
 
 const spotifyPassword = process.env.SPOTIFY_PASSWORD;
 const spotifyEmail = process.env.SPOTIFY_EMAIL;
@@ -278,6 +279,45 @@ const addSpotifyPlaylistSongs = async (token, songURIs) => {
     });
 }
 
+/**
+ * function that updates the details
+ */
+const updateSpotifyPlaylistTitle = async (token) => {
+    return new Promise( async (resolve, reject) => {
+
+        console.log('Changing playlist title ...');
+
+        const dateNow = new Date(Date.now());
+        const date = dateNow.getDate();
+        const dateth = nth(date);
+        const month = monthToHuman(dateNow.getMonth());
+        const year = dateNow.getFullYear();
+        const titleDate = date + dateth + " " + month + " " + year;
+        const title = `Asia Pop 40 - Weekly Updated Playlist - ${titleDate}`
+
+        const titleName = {
+            "name": title
+        };
+
+        try {
+            await fetch("https://api.spotify.com/v1/playlists/" + playlistID , {
+                method : "put",
+                headers : { 
+                    'Authorization' : "Bearer " + token,
+                    'Content-Type'  : 'application/json',
+                    'Accept'  : 'application/json',
+                },
+                body : JSON.stringify(titleName)
+            });
+            console.log(`Done changed playlist title`);
+            resolve();
+        } catch (err) {
+            console.error("Error inside addSpotifyPlaylistSongs : " + err);
+            reject();
+        }
+    });
+}
+
 export {
     scrapeAP40,
     startServer,
@@ -285,4 +325,5 @@ export {
     removeSpotifyPlaylistSongs,
     searchSpotifySongURIs,
     addSpotifyPlaylistSongs,
+    updateSpotifyPlaylistTitle,
 }
