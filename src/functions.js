@@ -191,7 +191,7 @@ const removeSpotifyPlaylistSongs = async (token) => {
 
 /**
  * function for searching one song uri
- * if the song doesn't exist in spotify, it puts mr. brightside song
+ * if the song doesn't exist in spotify, it returns nothing
  */
 const searchSpotifySongURI = async (token, searchQuery) => {
     const spotifySearch = await fetch("https://api.spotify.com/v1/search?q=" + searchQuery + "&type=track&limit=1", {
@@ -214,7 +214,6 @@ const searchSpotifySongURI = async (token, searchQuery) => {
         return spotifySearchResult.tracks.items[0].uri
     } catch (err) {
         console.error(`No uri while searching : ${searchQuery} : ${err}`)
-        return 'spotify:track:7oK9VyNzrYvRFo7nQEYkWN'
     }
 }
 
