@@ -5,7 +5,7 @@ import {
     removeSpotifyPlaylistSongs,
     searchSpotifySongURIs,
     addSpotifyPlaylistSongs,
-} from './functions.js'
+} from './functions.js';
 
 /**
  * supposed order of execution
@@ -34,23 +34,23 @@ import {
  */
 
 (async () => {
-    let token, chartSongs, songsURI
+    let token, chartSongs, songsURI;
 
-    chartSongs = await scrapeAP40()
+    chartSongs = await scrapeAP40();
 
-    startServer()
+    startServer();
 
     try {
-        token = await getSpotifyToken()
-        console.log(token)
+        token = await getSpotifyToken();
+        console.log(token);
     } catch (err) {
-        console.error(err)
-        return
+        console.error(err);
+        return;
     }
 
-    removeSpotifyPlaylistSongs(token)
+    removeSpotifyPlaylistSongs(token);
 
-    songsURI = await searchSpotifySongURIs(token, chartSongs)
-    addSpotifyPlaylistSongs(token, songsURI)
+    songsURI = await searchSpotifySongURIs(token, chartSongs);
+    addSpotifyPlaylistSongs(token, songsURI);
 
 })()
