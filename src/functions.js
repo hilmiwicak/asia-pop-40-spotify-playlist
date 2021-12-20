@@ -40,8 +40,7 @@ const scrapeAP40 = async () => {
 
             // find the title, removing the '-', and then get the text
             let chartSongTitle = chartNode.find('.chart-track-title').children().remove().end().text();
-            chartSongTitle = chartSongTitle.replace('ft. ', '');
-            chartSongTitle = chartSongTitle.replace(/[\[\]]+/g, '');
+            chartSongTitle = chartSongTitle.replace('ft. ', '').replace(/[\[\]]+/g, '');
 
             let chartSongArtists = [];
             chartNode.find('.chart-artist-title').children().each((i, artist) => {
@@ -103,7 +102,7 @@ const getSpotifyToken = () => {
             '&redirect_uri=' + redirectURL +
             '&scope=playlist-modify-public';
 
-        const browser = await puppeteer.launch({headless: false, devtools: true});
+        const browser = await puppeteer.launch({headless: false});
 
         const page = await browser.newPage();
         await page.setDefaultTimeout(0);
@@ -231,10 +230,15 @@ const searchSpotifySongURIs = async (token, songs) => {
 
         for(let song of songs){
             const artist = song.artists.join(' ');
-            const title = song.title;
-            const searchQuery = encodeURI(title + artist);
+            const title = song.title.replace(/'/ig, '').replace(/"/ig, '');
+            // why not chaining replace before encodingURI?
+            // the stupid function unable to encode parentheses "()"
+            // because of that, if i chain replace before the function (e.g. ".replace(/\(/, '%28')"),
+            // it will encode the %
+            const searchQuery = encodeURI(title + artist).replace(/\(/, '').replace(/\)/, '');
 
             const searchSongResult = await searchSpotifySongURI(token, searchQuery);
+            // console.log(searchQuery);
             songURIs.push(searchSongResult);
         }
 
