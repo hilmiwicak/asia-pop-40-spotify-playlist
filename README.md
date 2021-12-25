@@ -20,7 +20,7 @@ Built with Nodejs with the following libraries / modules:
 3. Run
 ```
 npm install
-node index.js
+node ./src/index.js
 ```
 
 # Why I Make This Project
