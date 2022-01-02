@@ -2,7 +2,7 @@
  * function to help date suffix
  */
 const nth = (date) => {
-    if (date >= 4 && date <= 20) return 'th';
+    if (date >= 4 && date <= 20) return "th";
     switch (date % 10) {
         case 1: return "st";
         case 2: return "nd";
