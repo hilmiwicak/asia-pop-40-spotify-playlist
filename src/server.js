@@ -38,9 +38,11 @@ const serverHandler = async (req, res) => {
             tokenSpotify = new URLSearchParams(tokenSpotify);
             tokenSpotify = tokenSpotify.get('access_token');
 
-            res.writeHead(201, 'OK' );
+            res.writeHead(201, {
+                'Content-Type': 'text/plain'
+            });
             res.write(tokenSpotify);
-            res.end();
+            res.end('OK');
         })
     }
 

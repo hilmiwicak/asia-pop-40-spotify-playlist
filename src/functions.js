@@ -20,7 +20,7 @@ const playlistID = process.env.SPOTIFY_PLAYLIST_ID;
 const scrapeAP40 = async () => {
     return new Promise( async (resolve, reject) => {
 
-        console.log(`Scraping Asia Pop 40's webiste...`);
+        console.log(`Scraping Asia Pop 40's website...`);
 
         let AP40HTML;
         let songs = [];
@@ -32,7 +32,7 @@ const scrapeAP40 = async () => {
         } catch (err) {
             console.error("Error inside scrapeAP40 : " + err);
             reject();
-        }
+        };
 
         const $ = cheerio.load(AP40HTML);
 
@@ -100,7 +100,7 @@ const getSpotifyToken = () => {
             'https://accounts.spotify.com/authorize?' +
             'client_id=' + clientID +
             '&response_type=token' +
-            '&redirect_uri=' + redirectURL +
+            '&redirect_uri=' + redirectURL.href +
             '&scope=playlist-modify-public';
 
         const browser = await puppeteer.launch({headless: false});
@@ -112,35 +112,27 @@ const getSpotifyToken = () => {
             waitUntil: "networkidle2"
         });
 
-        await page.waitForSelector('input#login-username[name=username]');
+        await page.waitForSelector('input#login-username');
 
-        await page.type('input#login-username[name=username]', spotifyEmail, { delay : 300 });
+        await page.type('input#login-username', spotifyEmail, { delay : 300 });
         await page.type('input#login-password', spotifyPassword, { delay : 300 });
-        await page.click('input#login-remember');
-        await page.click('button#login-button');
 
         try {
             await page.waitForNavigation({
                 timeout: 10000,
                 waitUntil: "networkidle2"
             });
-        } catch (err) {
-            console.error(`Error waitForNavigation : ${err}`);
-            reject(err)
-        }
 
-        try {
             let token = await page.content();
             await browser.close();
-
+    
             token = token.replace(/<([^>]+)>/gi, ''); // strip tags
             console.log(`Done taking token`);
             resolve(token);
         } catch (err) {
-            console.error(`error inside content ${reject}`);
-            browser.close();
-            reject(undefined);
-        }
+            console.error(`Error in navigation/content/closing browser : ${err}`);
+            reject(err);
+        };
     });
 }
 
@@ -185,7 +177,7 @@ const removeSpotifyPlaylistSongs = async (token) => {
         } catch (err) {
             console.error("Error inside removeSpotifyPlaylistSongs : " + err);
             reject();
-        }
+        };
     });
 }
 
@@ -214,7 +206,7 @@ const searchSpotifySongURI = async (token, searchQuery) => {
         return spotifySearchResult.tracks.items[0].uri;
     } catch (err) {
         console.error(`No uri while searching : ${searchQuery} : ${err}`);
-    }
+    };
 }
 
 /**
@@ -275,7 +267,7 @@ const addSpotifyPlaylistSongs = async (token, songURIs) => {
         } catch (err) {
             console.error("Error inside addSpotifyPlaylistSongs : " + err);
             reject();
-        }
+        };
     });
 }
 
@@ -314,7 +306,7 @@ const updateSpotifyPlaylistTitle = async (token) => {
         } catch (err) {
             console.error("Error inside addSpotifyPlaylistSongs : " + err);
             reject();
-        }
+        };
     });
 }
 
