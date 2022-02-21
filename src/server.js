@@ -19,7 +19,7 @@ const serverHandler = async (req, res) => {
         res.writeHead(201, 'OK', {
             "Content-Type" : "text/html",
         });
-        const fileHTML = fs.readFileSync(process.cwd() + '/src/services/token/tokenHash.html');
+        const fileHTML = fs.readFileSync(process.cwd() + '/src/util/token/tokenHash.html');
         res.write(fileHTML);
         res.end();
     }
@@ -46,12 +46,18 @@ const serverHandler = async (req, res) => {
         })
     }
 
+    else if (req.method === 'GET' && requestURL.pathname === '/test') {
+        console.log('accessed GET /test')
+
+        console.log('out');
+    }
+
     else {
         console.log('masuk else');
         req.on('data', (chunk) => {
             console.log(chunk);
         });
-        res.writeHead(201, 'OK');
+        res.writeHead('apani');
         res.write('masuk else');
         res.end();
     }
