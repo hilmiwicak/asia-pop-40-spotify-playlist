@@ -8,6 +8,12 @@ Built with Nodejs with the following libraries / modules:
 4. node HTTP module
 5. node Child Process module
 
+# ❗ Errors / Current state ❗
+
+currently I'm unable to update / do anything with [client credentials](https://developer.spotify.com/documentation/general/guides/authorization/client-credentials/) flow.
+Almost all request to the spotify API returns error 401.
+That's why I'm trying to change from client credentials to [authorization code](https://developer.spotify.com/documentation/general/guides/authorization/code-flow/) with [this](https://github.com/thelinmichael/spotify-web-api-node) library.
+
 # Prerequisites
 
 1. Node with NPM
