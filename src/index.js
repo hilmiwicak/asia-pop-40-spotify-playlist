@@ -1,28 +1,28 @@
 import {
-    scrapeAP40,
-    startServer,
-    getSpotifyToken, 
-    removeSpotifyPlaylistSongs,
-    searchSpotifySongURIs,
-    addSpotifyPlaylistSongs,
-    updateSpotifyPlaylistTitle,
-} from './functions.js';
+  scrapeAP40,
+  startServer,
+  getSpotifyToken,
+  removeSpotifyPlaylistSongs,
+  searchSpotifySongURIs,
+  addSpotifyPlaylistSongs,
+  updateSpotifyPlaylistTitle,
+} from "./functions.js";
 
 /**
  * supposed order of execution
- * 
+ *
  * scrapeAP40
  * serve server - then go to login-spotify until POST get-token-hash (getting the token)
- * 
+ *
  * remove AWAIT token
  * search AWAIT token & scrape
  * add AWAIT search & token
  * edit AWAIT add
- * 
- * scrapeAP40, serve server 
+ *
+ * scrapeAP40, serve server
  * login-spotify until POST get-token-hash
  * remove
- * search 
+ * search
  * add
  * edit description
  */
@@ -35,25 +35,24 @@ import {
  */
 
 (async () => {
-    let token, chartSongs, songsURI;
+  let token, chartSongs, songsURI;
 
-    chartSongs = await scrapeAP40();
+  chartSongs = await scrapeAP40();
 
-    startServer();
+  startServer();
 
-    try {
-        token = await getSpotifyToken();
-        console.log(token);
-    } catch (err) {
-        console.error(err);
-        return;
-    }
+  try {
+      token = await getSpotifyToken();
+      console.log(token);
+  } catch (err) {
+      console.error(err);
+      return;
+  }
 
-    removeSpotifyPlaylistSongs(token);
+  removeSpotifyPlaylistSongs(token);
 
-    songsURI = await searchSpotifySongURIs(token, chartSongs);
-    addSpotifyPlaylistSongs(token, songsURI);
+  songsURI = await searchSpotifySongURIs(token, chartSongs);
+  addSpotifyPlaylistSongs(token, songsURI);
 
-    updateSpotifyPlaylistTitle(token);
-
-})()
+  updateSpotifyPlaylistTitle(token);
+})();

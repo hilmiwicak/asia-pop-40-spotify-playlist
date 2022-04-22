@@ -1,70 +1,33 @@
-import http from 'http';
-import 'dotenv/config';
-import fs from 'fs';
+import http from "http";
+import "dotenv/config";
+import fs from "fs";
 
-const HOST = process.env.HOST || 'localhost';
+const HOST = process.env.HOST || "localhost";
 const PORT = process.env.PORT || 3000;
 
 const serverHandler = async (req, res) => {
+  const requestURL = new URL(req.url, `http://${req.headers.host}`);
 
-    const requestURL = new URL(req.url, `http://${req.headers.host}`) ;
+  const redirectURLAfterLogin = `${requestURL.origin}/get-token-hash`;
+  let tokenSpotify = "";
 
-    const redirectURLAfterLogin = `${requestURL.origin}/get-token-hash`;
-    let tokenSpotify = '';
+  // GET http://HOST:PORT/get-token-hash
+  if (req.method === "GET" && requestURL.pathname === "/get-token-hash") {
+    console.log("accessed GET /get-token-hash");
 
-    // GET http://HOST:PORT/get-token-hash
-    if (req.method === 'GET' && requestURL.pathname === '/get-token-hash'){
-        console.log('accessed GET /get-token-hash');
+    tokenSpotify = requestURL.searchParams.get("code");
+    console.log(tokenSpotify);
 
-        res.writeHead(201, 'OK', {
-            "Content-Type" : "text/html",
-        });
-        const fileHTML = fs.readFileSync(process.cwd() + '/src/util/token/tokenHash.html');
-        res.write(fileHTML);
-        res.end();
-    }
+    res.writeHead(201, {
+      "Content-Type": "text/plain",
+    });
 
-    // POST http://HOST:PORT/get-token-hash
-    // taking the token to the server after submitting post request from GET /get-token-hash
-    else if (req.method === 'POST' && requestURL.pathname === '/get-token-hash'){
-        console.log('accessed POST /get-token-hash');
-
-        req.on('data', (chunk) => {
-            tokenSpotify += chunk;
-        });
-
-        req.on('end', () => {
-            console.log('end of request POST /get-token-hash');
-            tokenSpotify = new URLSearchParams(tokenSpotify);
-            tokenSpotify = tokenSpotify.get('access_token');
-
-            res.writeHead(201, {
-                'Content-Type': 'text/plain'
-            });
-            res.write(tokenSpotify);
-            res.end('OK');
-        })
-    }
-
-    else if (req.method === 'GET' && requestURL.pathname === '/test') {
-        console.log('accessed GET /test')
-
-        console.log('out');
-    }
-
-    else {
-        console.log('masuk else');
-        req.on('data', (chunk) => {
-            console.log(chunk);
-        });
-        res.writeHead('apani');
-        res.write('masuk else');
-        res.end();
-    }
-
-}
+    res.write(tokenSpotify);
+    res.end();
+  }
+};
 
 const server = http.createServer(serverHandler);
 server.listen(PORT, HOST, () => {
-    console.log(`Server is running at ${HOST}:${PORT}`);
-})
+  console.log(`Server is running at ${HOST}:${PORT}`);
+});
