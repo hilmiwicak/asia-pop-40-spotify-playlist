@@ -42,11 +42,11 @@ import {
   startServer();
 
   try {
-      token = await getSpotifyToken();
-      console.log(token);
+    token = await getSpotifyToken();
+    console.log(token);
   } catch (err) {
-      console.error(err);
-      return;
+    console.error(err);
+    return;
   }
 
   removeSpotifyPlaylistSongs(token);

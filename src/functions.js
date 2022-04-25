@@ -6,11 +6,13 @@ import puppeteer from "puppeteer";
 import { URL } from "url";
 import { spawn } from "child_process";
 import { nth, monthToHuman } from "./util/dateHelper.js";
+import { Buffer } from "buffer";
 
-const spotifyPassword = process.env.SPOTIFY_PASSWORD;
-const spotifyEmail = process.env.SPOTIFY_EMAIL;
-const clientID = process.env.SPOTIFY_CLIENT_ID;
-const playlistID = process.env.SPOTIFY_PLAYLIST_ID;
+const SPOTIFY_PASSWORD = process.env.SPOTIFY_PASSWORD;
+const SPOTIFY_EMAIL = process.env.SPOTIFY_EMAIL;
+const CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
+const SECRET_CLIENT_ID = process.env.SPOTIFY_CLIENT_SECRET;
+const PLAYLIST_ID = process.env.SPOTIFY_PLAYLIST_ID;
 
 /**
  * function that scrapes Asia Pop 40's website.
@@ -29,7 +31,7 @@ const scrapeAP40 = async () => {
       if (!AP40Fetch.ok) throw new Error("not fetching asiapop40 correctly");
       AP40HTML = await AP40Fetch.text();
     } catch (err) {
-      console.error("Error inside scrapeAP40 : " + err);
+      console.error(`Error in scrapeAP40 : ${err}`);
       reject();
     }
 
@@ -93,8 +95,44 @@ const startServer = () => {
   }, 60000);
 };
 
+/*
+ * function to request access token to spotify because
+ * this function is called after getting user authorized token (the end of getUserAuthCode)
+ *
+ */
+const getSpotifyAccessToken = (code) => {
+  const encodedAuthClient = Buffer.from(
+    `${CLIENT_ID}:${SECRET_CLIENT_ID}`,
+    "utf-8"
+  ).toString("base64");
+  const redirectURL = new URL("http://localhost:3000/get-token-hash");
+
+  return new Promise(async (resolve, reject) => {
+    try {
+      let token = await fetch("https://accounts.spotify.com/api/token", {
+        method: "post",
+        headers: {
+          Authorization: "Basic " + encodedAuthClient,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: `grant_type=authorization_code&code=${code}&redirect_uri=${redirectURL.href}`,
+      });
+      if (!token.ok) throw new Error("not fetching getSpotifyAccessToken correctly");
+      token = await token.json();
+      token = token.access_token;
+
+      console.log("Done getting spotify access token");
+      resolve(token);
+    } catch (err) {
+      console.error(`Error in getSpotifyAccessToken : ${err}`);
+      reject();
+    }
+  });
+};
+
 /**
- * function to perform login and take token from implicit grant flow
+ * function to perform login and get authorization token from authorization code flow
+ * and then authorization token is exchanged into Access Token
  *
  * @returns promise with resolve token / reject undefined
  */
@@ -105,9 +143,8 @@ const getSpotifyToken = () => {
     const redirectURL = new URL("http://localhost:3000/get-token-hash");
     const spotifyTokenURL =
       "https://accounts.spotify.com/authorize?" +
-      "client_id=" +
-      clientID +
-      "&response_type=token" +
+      "client_id=" + CLIENT_ID +
+      "&response_type=code" +
       "&redirect_uri=" +
       redirectURL.href +
       "&scope=playlist-modify-public";
@@ -123,8 +160,8 @@ const getSpotifyToken = () => {
 
     await page.waitForSelector("input#login-username");
 
-    await page.type("input#login-username", spotifyEmail, { delay: 300 });
-    await page.type("input#login-password", spotifyPassword, { delay: 300 });
+    await page.type("input#login-username", SPOTIFY_EMAIL, { delay: 300 });
+    await page.type("input#login-password", SPOTIFY_PASSWORD, { delay: 300 });
 
     try {
       await page.waitForNavigation({
@@ -132,12 +169,21 @@ const getSpotifyToken = () => {
         waitUntil: "networkidle2",
       });
 
-      let token = await page.content();
+      let authToken = await page.content();
       await browser.close();
 
-      token = token.replace(/<([^>]+)>/gi, ""); // strip tags
-      console.log(`Done taking token`);
+      authToken = authToken.replace(/<([^>]+)>/gi, ""); // strip tags
+      console.log(`Done taking authToken`);
+
+      let token;
+      try {
+        token = await getSpotifyAccessToken(authToken);
+      } catch (err) {
+        console.error(`Error access token inside getSpotifyToken : ${err}`);
+        return;
+      }
       resolve(token);
+
     } catch (err) {
       console.error(`Error in navigation/content/closing browser : ${err}`);
       reject(err);
@@ -171,8 +217,8 @@ const removeSpotifyPlaylistSongs = async (token) => {
     };
 
     try {
-      await fetch(
-        "https://api.spotify.com/v1/playlists/" + playlistID + "/tracks",
+      let response = await fetch(
+        "https://api.spotify.com/v1/playlists/" + PLAYLIST_ID + "/tracks",
         {
           method: "delete",
           headers: {
@@ -182,10 +228,12 @@ const removeSpotifyPlaylistSongs = async (token) => {
           body: JSON.stringify(dataTracks),
         }
       );
+      if (!response.ok) throw new Error("not deleting removeSpotifyPlaylistSongs correctly");
+
       console.log(`Done removing songs`);
       resolve();
     } catch (err) {
-      console.error("Error inside removeSpotifyPlaylistSongs : " + err);
+      console.error(`Error inside removeSpotifyPlaylistSongs : ${err}`);
       reject();
     }
   });
@@ -273,8 +321,8 @@ const addSpotifyPlaylistSongs = async (token, songURIs) => {
     };
 
     try {
-      await fetch(
-        "https://api.spotify.com/v1/playlists/" + playlistID + "/tracks",
+      let response = await fetch(
+        "https://api.spotify.com/v1/playlists/" + PLAYLIST_ID + "/tracks",
         {
           method: "post",
           headers: {
@@ -284,10 +332,12 @@ const addSpotifyPlaylistSongs = async (token, songURIs) => {
           body: JSON.stringify(dataURIs),
         }
       );
+      if (!response.ok) throw new Error("not fetching addSpotifyPlaylistSongs correctly");
+
       console.log(`Done adding searched songs`);
       resolve();
     } catch (err) {
-      console.error("Error inside addSpotifyPlaylistSongs : " + err);
+      console.error(`Error inside addSpotifyPlaylistSongs : ${err}`);
       reject();
     }
   });
@@ -313,19 +363,24 @@ const updateSpotifyPlaylistTitle = async (token) => {
     };
 
     try {
-      await fetch("https://api.spotify.com/v1/playlists/" + playlistID, {
-        method: "put",
-        headers: {
-          Authorization: "Bearer " + token,
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify(titleName),
-      });
+      let response = await fetch(
+        "https://api.spotify.com/v1/playlists/" + PLAYLIST_ID,
+        {
+          method: "put",
+          headers: {
+            Authorization: "Bearer " + token,
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify(titleName),
+        }
+      );
+      if (!response.ok) throw new Error("not updating title correctly");
+
       console.log(`Done changed playlist title`);
       resolve();
     } catch (err) {
-      console.error("Error inside addSpotifyPlaylistSongs : " + err);
+      console.error(`Error inside updateSpotifyPlaylistTitle : ${err}`);
       reject();
     }
   });
