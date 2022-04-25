@@ -8,16 +8,9 @@ Built with Nodejs with the following libraries / modules:
 4. node HTTP module
 5. node Child Process module
 
-# ❗ Errors / Current state ❗
-
-currently I'm unable to update / do anything with [client credentials](https://developer.spotify.com/documentation/general/guides/authorization/client-credentials/) flow.
-Almost all request to the spotify API returns error 401.
-That's why I'm trying to change from client credentials to [authorization code](https://developer.spotify.com/documentation/general/guides/authorization/code-flow/) with [this](https://github.com/thelinmichael/spotify-web-api-node) library.
-
 # Prerequisites
 
 1. Node with NPM
-2. OS that can install chromium (I've tried using WSL and it failed, I think it's because my VM doesn't have chrome OR it can't install chrome)
 
 # Using asia-pop-40-spotify-playlist
 
@@ -25,14 +18,14 @@ That's why I'm trying to change from client credentials to [authorization code](
 2. Copy `.env.example` to `.env` and fill it out.
 3. Run
 ```
+touch ./src/uris.json
 npm install
 node ./src/index.js
 ```
 
 # Why I Make This Project
 
-The reason I started this project was when I was looking for asiapop40's spotify playlist and figured out that all existing playlists are not up-to-date.
-I figured "while I'm on a semester holiday and I also wanted to learn Node.js, why not?".
+The reason I started this project is because there are no updated Asia Pop 40's playlist in spotify.  
 
 # Why in Javascript / Node.js
 
@@ -41,16 +34,18 @@ I just wanted to learn about Node.js further (I've developed in MERN stack for a
 One advantage of using Javascript is that it has a lot of libraries that later I used in this project.
 Other than that, I think the downside of Javascript is that promises are a headache.
 
-# How Does This Project Work
+# The Runtime Order of The Project
 
-1. Scrapes the asiapop40.com website, gets the top 40 chart
+You can see this inside [this file.](.\src\index.js)  
+1. Scrapes the asiapop40.com website, gets the top 40 chart.
 2. Starts server to get the redirected token from Spotify API  
     _Why do you have to use a server_?  
-    Because I use implicit grant authorization flow.  
-    _Why do you use implicit grant authorization flow_?  
-    Because at first I used client credentials flow, because my application is running only the backend, doesn't need authorization using the app, or you can say it machine-to-machine communication, but later figured out that you can't update playlist using client credentials(ツ).
-    Then it left me with 2 options: Authorization code and Implicit grant.  
-3. Starts puppeteer and asks for the token
-4. Removes previous songs from the playlist while searching the songs from the chart in spotify  
-    How does it removes the previous songs while Spotify API can't removes songs emmidiately?
-5. Adds the searched songs to the playlist
+    Because I use authorization code flow. Every authorization flow needs redirect_uri in their query parameter (except client credentials, but the scope of client credentials flow is so small) , and they returns the token inside the url (either hash parameter or query parameter). Server is needed to send the token into node code.  
+3. Starts puppeteer and getting the authorization code.
+4. Exchanging the authorization code into access token.   
+    This is runned by function getSpotifyAccessToken that is called inside getSpotifyToken.
+5. Removes all songs from the playlist while searching the songs from the chart in spotify  
+    _How does it removes the previous songs, meanwhile Spotify API can't removes songs immediately?_  
+    By saving the previous added song uris into a file called uris.json.  
+6. Adds the searched songs to the playlist
+7. Update the title
