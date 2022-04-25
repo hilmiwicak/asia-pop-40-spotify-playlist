@@ -23,8 +23,7 @@
     "dotenv": "^10.0.0",
     "node-fetch": "^2.6.6",
     "nodemon": "^2.0.15",
-    "puppeteer": "^10.4.0",
-    "spotify-web-api-node": "^5.0.2"
+    "puppeteer": "^10.4.0"
   },
   "type": "module"
 }
