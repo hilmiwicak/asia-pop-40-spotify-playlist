@@ -1,13 +1,3 @@
-# asia-pop-40-spotify-playlist
-
-Auto update spotify playlist from Asia Pop 40 's website.
-Built with Nodejs with the following libraries / modules:
-1. [cheerio](https://github.com/cheeriojs/cheerio)
-2. [puppeteer](https://github.com/puppeteer/puppeteer/)
-3. [node-fetch](https://github.com/node-fetch/node-fetch)
-4. node HTTP module
-5. node Child Process module
-
 # Prerequisites
 
 1. Node with NPM
@@ -36,7 +26,7 @@ Other than that, I think the downside of Javascript is that promises are a heada
 
 # The Runtime Order of The Project
 
-You can see this inside [this file.](.\src\index.js)  
+You can see this inside [this file.](/src/index.js)  
 1. Scrapes the asiapop40.com website, gets the top 40 chart.
 2. Starts server to get the redirected token from Spotify API  
     _Why do you have to use a server_?  
