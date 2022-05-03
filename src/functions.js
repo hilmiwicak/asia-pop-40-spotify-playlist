@@ -304,7 +304,7 @@ const searchSpotifySongURIs = async (token, songs) => {
       JSON.stringify(songURIs),
       "utf8"
     );
-    console.log(`Done Searching`);
+    console.log(`Done searching`);
     resolve(songURIs);
   });
 };
@@ -377,7 +377,7 @@ const updateSpotifyPlaylistTitle = async (token) => {
       );
       if (!response.ok) throw new Error("not updating title correctly");
 
-      console.log(`Done changed playlist title`);
+      console.log(`Done changing playlist title`);
       resolve();
     } catch (err) {
       console.error(`Error inside updateSpotifyPlaylistTitle : ${err}`);
