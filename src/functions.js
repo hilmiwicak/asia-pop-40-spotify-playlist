@@ -5,7 +5,7 @@ import fs from "fs";
 import puppeteer from "puppeteer";
 import { URL } from "url";
 import { spawn } from "child_process";
-import { nth, monthToHuman } from "./util/dateHelper.js";
+import { monthToHuman } from "./util/dateHelper.js";
 import { Buffer } from "buffer";
 
 const SPOTIFY_PASSWORD = process.env.SPOTIFY_PASSWORD;
@@ -352,11 +352,11 @@ const updateSpotifyPlaylistTitle = async (token) => {
 
     const dateNow = new Date(Date.now());
     const date = dateNow.getDate();
-    const dateth = nth(date);
     const month = monthToHuman(dateNow.getMonth());
     const year = dateNow.getFullYear();
-    const titleDate = date + dateth + " " + month + " " + year;
+    const titleDate = `${date} ${month} ${year}`;
     const title = `Asia Pop 40 - Weekly Updated Playlist - ${titleDate}`;
+    console.log(title);
 
     const titleName = {
       name: title,
