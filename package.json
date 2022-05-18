@@ -2,10 +2,9 @@
   "name": "asia-pop-40-spotify-playlist",
   "version": "1.0.0",
   "description": "Auto update spotify playlist from Asia Pop 40 's website",
-  "main": "index.js",
+  "main": "src/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "npx nodemon server.js"
+    "start": "node src/index.js"
   },
   "repository": {
     "type": "git",

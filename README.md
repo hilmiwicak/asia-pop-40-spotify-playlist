@@ -5,12 +5,12 @@
 # Using asia-pop-40-spotify-playlist
 
 1. Make sure you have your application registered in spotify, put `localhost:3000/get-token-hash` for the redirect URL.
-2. Copy `.env.example` to `.env` and fill it out.
-3. Run
+2. Run
 ```
 touch ./src/uris.json
+cp .env.example .env # and then fill it out
 npm install
-node ./src/index.js
+npm run start
 ```
 
 # Why I Make This Project
