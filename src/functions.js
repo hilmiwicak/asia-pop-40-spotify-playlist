@@ -163,6 +163,8 @@ const getSpotifyToken = () => {
     await page.type("input#login-username", SPOTIFY_EMAIL, { delay: 300 });
     await page.type("input#login-password", SPOTIFY_PASSWORD, { delay: 300 });
 
+    await page.click("button#login-button", { "button": "left" });
+
     try {
       await page.waitForNavigation({
         timeout: 10000,
@@ -356,7 +358,6 @@ const updateSpotifyPlaylistTitle = async (token) => {
     const year = dateNow.getFullYear();
     const titleDate = `${date} ${month} ${year}`;
     const title = `Asia Pop 40 - Weekly Updated Playlist - ${titleDate}`;
-    console.log(title);
 
     const titleName = {
       name: title,
