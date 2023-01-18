@@ -6,7 +6,7 @@ import {
   searchSpotifySongURIs,
   addSpotifyPlaylistSongs,
   updateSpotifyPlaylistTitle,
-} from "./functions.js";
+} from "./ap40.js";
 
 /**
  * supposed order of execution

@@ -38,35 +38,37 @@ const scrapeAP40 = async () => {
     const $ = cheerio.load(AP40HTML);
 
     $(".accordion-item").each((i, chartItem) => {
-      let chartNode = $(chartItem);
+      if (i < 40) {
+        let chartNode = $(chartItem);
 
-      // find the title, removing the '-', and then get the text
-      let chartSongTitle = chartNode
+        // find the title, removing the '-', and then get the text
+        let chartSongTitle = chartNode
         .find(".chart-track-title")
         .children()
         .remove()
         .end()
         .text();
-      chartSongTitle = chartSongTitle
-        .replace("ft. ", "")
-        .replace(/[\[\]]+/g, "");
+        chartSongTitle = chartSongTitle
+          .replace("ft. ", "")
+          .replace(/[\[\]]+/g, "");
 
-      let chartSongArtists = [];
-      chartNode
-        .find(".chart-artist-title")
-        .children()
-        .each((i, artist) => {
-          let artistNode = $(artist);
-          chartSongArtists.push(artistNode.text());
-        });
+        let chartSongArtists = [];
+        chartNode
+          .find(".chart-artist-title")
+          .children()
+          .each((j, artist) => {
+            let artistNode = $(artist);
+            chartSongArtists.push(artistNode.text());
+          });
 
-      let chartData = {
-        title: chartSongTitle,
-        artists: chartSongArtists,
-        spotifyURI: "",
-      };
+        let chartData = {
+          title: chartSongTitle,
+          artists: chartSongArtists,
+          spotifyURI: "",
+        };
 
-      songs.push(chartData);
+        songs.push(chartData);
+      }
     });
 
     console.log(`Done scraping Asia Pop 40's webiste`);
