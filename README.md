@@ -2,7 +2,7 @@
 
 1. Node with NPM
 
-# Using asia-pop-40-spotify-playlist
+## Using asia-pop-40-spotify-playlist
 
 1. Make sure you have your application registered in spotify, put `localhost:3000/get-token-hash` for the redirect URL.
 2. Run
@@ -13,7 +13,7 @@ npm install
 npm run start
 ```
 
-# Why I Make This Project
+## Why I Make This Project
 
 The reason I started this project is because there are no updated Asia Pop 40's playlist in spotify.  
 
@@ -24,7 +24,7 @@ I just wanted to learn about Node.js further (I've developed in MERN stack for a
 One advantage of using Javascript is that it has a lot of libraries that later I used in this project.
 Other than that, I think the downside of Javascript is that promises are a headache.
 
-# The Runtime Order of The Project
+## The Runtime Order of The Project
 
 You can see this inside [this file.](/src/index.js)  
 1. Scrapes the asiapop40.com website, gets the top 40 chart.
