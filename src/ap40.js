@@ -14,6 +14,30 @@ const CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
 const SECRET_CLIENT_ID = process.env.SPOTIFY_CLIENT_SECRET;
 const PLAYLIST_ID = process.env.SPOTIFY_PLAYLIST_ID;
 
+/*
+ * function to get Asia Pop 40's website because
+ * the new website is client-side rendered
+ *
+ */
+const getAP40 = async () => {
+  // return new Promise(async (resolve, reject) => {
+    // link airtable 10/4/2023 https://airtable.com/embed/shrt4bV5k6wm3OVI0
+    console.log("Running puppeteer to get Asia Pop 40's content ...");
+
+    const browser = await puppeteer.launch({ headless: false, devtools: true });
+    const page = await browser.newPage();
+    page.setDefaultTimeout(0);
+    await page.goto("https://airtable.com/shrt4bV5k6wm3OVI0", {
+      waitUntil: "networkidle2",
+    });
+
+    let AP40content = await page.content()
+
+    console.log("Done scraping Asia Pop 40's webiste");
+    await browser.close();
+  // });
+}
+
 /**
  * function that scrapes Asia Pop 40's website.
  * takes texts from classes "chart-track-<title or rank or artists>" ,
@@ -24,7 +48,7 @@ const scrapeAP40 = async () => {
     console.log(`Scraping Asia Pop 40's website...`);
 
     let AP40HTML;
-    let songs = [];
+    // let songs = [];
 
     try {
       const AP40Fetch = await fetch("https://asiapop40.com");
@@ -36,43 +60,43 @@ const scrapeAP40 = async () => {
     }
 
     const $ = cheerio.load(AP40HTML);
+    //
+    // $(".accordion-item").each((i, chartItem) => {
+    //   if (i < 40) {
+    //     let chartNode = $(chartItem);
+    //
+    //     // find the title, removing the '-', and then get the text
+    //     let chartSongTitle = chartNode
+    //     .find(".chart-track-title")
+    //     .children()
+    //     .remove()
+    //     .end()
+    //     .text();
+    //     chartSongTitle = chartSongTitle
+    //       .replace("ft. ", "")
+    //       .replace(/[\[\]]+/g, "");
+    //
+    //     let chartSongArtists = [];
+    //     chartNode
+    //       .find(".chart-artist-title")
+    //       .children()
+    //       .each((j, artist) => {
+    //         let artistNode = $(artist);
+    //         chartSongArtists.push(artistNode.text());
+    //       });
+    //
+    //     let chartData = {
+    //       title: chartSongTitle,
+    //       artists: chartSongArtists,
+    //       spotifyURI: "",
+    //     };
+    //
+    //     songs.push(chartData);
+    //   }
+    // });
 
-    $(".accordion-item").each((i, chartItem) => {
-      if (i < 40) {
-        let chartNode = $(chartItem);
-
-        // find the title, removing the '-', and then get the text
-        let chartSongTitle = chartNode
-        .find(".chart-track-title")
-        .children()
-        .remove()
-        .end()
-        .text();
-        chartSongTitle = chartSongTitle
-          .replace("ft. ", "")
-          .replace(/[\[\]]+/g, "");
-
-        let chartSongArtists = [];
-        chartNode
-          .find(".chart-artist-title")
-          .children()
-          .each((j, artist) => {
-            let artistNode = $(artist);
-            chartSongArtists.push(artistNode.text());
-          });
-
-        let chartData = {
-          title: chartSongTitle,
-          artists: chartSongArtists,
-          spotifyURI: "",
-        };
-
-        songs.push(chartData);
-      }
-    });
-
-    console.log(`Done scraping Asia Pop 40's webiste`);
-    resolve(songs);
+    // console.log(`Done scraping Asia Pop 40's webiste`);
+    resolve($);
   });
 };
 
@@ -390,6 +414,7 @@ const updateSpotifyPlaylistTitle = async (token) => {
 };
 
 export {
+  getAP40,
   scrapeAP40,
   startServer,
   getSpotifyToken,

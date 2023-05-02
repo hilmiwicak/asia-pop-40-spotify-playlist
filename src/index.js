@@ -1,4 +1,5 @@
 import {
+  getAP40,
   scrapeAP40,
   startServer,
   getSpotifyToken,
@@ -35,24 +36,26 @@ import {
  */
 
 (async () => {
-  let token, chartSongs, songsURI;
-
-  chartSongs = await scrapeAP40();
-
-  startServer();
-
-  try {
-    token = await getSpotifyToken();
-    console.log(token);
-  } catch (err) {
-    console.error(err);
-    return;
-  }
-
-  removeSpotifyPlaylistSongs(token);
-
-  songsURI = await searchSpotifySongURIs(token, chartSongs);
-  addSpotifyPlaylistSongs(token, songsURI);
-
-  updateSpotifyPlaylistTitle(token);
+  await getAP40();
+  // let token, chartSongs, songsURI;
+  //
+  // chartSongs = await scrapeAP40();
+  // chartSongs = await scrapeAP40();
+  //
+  // startServer();
+  //
+  // try {
+  //   token = await getSpotifyToken();
+  //   console.log(token);
+  // } catch (err) {
+  //   console.error(err);
+  //   return;
+  // }
+  //
+  // removeSpotifyPlaylistSongs(token);
+  //
+  // songsURI = await searchSpotifySongURIs(token, chartSongs);
+  // addSpotifyPlaylistSongs(token, songsURI);
+  //
+  // updateSpotifyPlaylistTitle(token);
 })();
