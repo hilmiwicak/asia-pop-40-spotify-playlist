@@ -1,6 +1,6 @@
 {
   "name": "asia-pop-40-spotify-playlist",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Auto update spotify playlist from Asia Pop 40 's website",
   "main": "src/index.js",
   "scripts": {
