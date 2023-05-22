@@ -1,32 +1,14 @@
 import {
-  getAP40,
-  scrapeAP40,
+  getAP40csv,
+  parseAP40csv,
   startServer,
-  getSpotifyToken,
+  automateSpotifyToken,
+  getSpotifyAccessToken,
   removeSpotifyPlaylistSongs,
   searchSpotifySongURIs,
   addSpotifyPlaylistSongs,
   updateSpotifyPlaylistTitle,
 } from "./ap40.js";
-
-/**
- * supposed order of execution
- *
- * scrapeAP40
- * serve server - then go to login-spotify until POST get-token-hash (getting the token)
- *
- * remove AWAIT token
- * search AWAIT token & scrape
- * add AWAIT search & token
- * edit AWAIT add
- *
- * scrapeAP40, serve server
- * login-spotify until POST get-token-hash
- * remove
- * search
- * add
- * edit description
- */
 
 /**
  * NOTES :
@@ -36,26 +18,21 @@ import {
  */
 
 (async () => {
-  await getAP40();
-  // let token, chartSongs, songsURI;
-  //
-  // chartSongs = await scrapeAP40();
-  // chartSongs = await scrapeAP40();
-  //
-  // startServer();
-  //
-  // try {
-  //   token = await getSpotifyToken();
-  //   console.log(token);
-  // } catch (err) {
-  //   console.error(err);
-  //   return;
-  // }
-  //
-  // removeSpotifyPlaylistSongs(token);
-  //
-  // songsURI = await searchSpotifySongURIs(token, chartSongs);
-  // addSpotifyPlaylistSongs(token, songsURI);
-  //
-  // updateSpotifyPlaylistTitle(token);
+  let chartList, authToken, accessToken, songsURI;
+
+  await getAP40csv();
+  chartList = await parseAP40csv();
+
+  startServer();
+  authToken = await automateSpotifyToken();
+  accessToken = await getSpotifyAccessToken(authToken);
+
+  removeSpotifyPlaylistSongs(accessToken);
+
+  songsURI = await searchSpotifySongURIs(accessToken, chartList);
+
+  addSpotifyPlaylistSongs(accessToken, songsURI);
+
+  updateSpotifyPlaylistTitle(accessToken);
+
 })();

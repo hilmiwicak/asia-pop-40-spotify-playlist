@@ -8,7 +8,6 @@ const PORT = process.env.PORT || 3000;
 const serverHandler = async (req, res) => {
   const requestURL = new URL(req.url, `http://${req.headers.host}`);
 
-  const redirectURLAfterLogin = `${requestURL.origin}/get-token-hash`;
   let tokenSpotify = "";
 
   // GET http://HOST:PORT/get-token-hash
@@ -16,7 +15,7 @@ const serverHandler = async (req, res) => {
     console.log("accessed GET /get-token-hash");
 
     tokenSpotify = requestURL.searchParams.get("code");
-    console.log(tokenSpotify);
+    console.log(`spotify auth token : ${tokenSpotify}`);
 
     res.writeHead(201, {
       "Content-Type": "text/plain",

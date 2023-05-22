@@ -1,9 +1,10 @@
 import "dotenv/config.js";
-import cheerio from "cheerio";
+import { parseFile } from "fast-csv";
 import fetch from "node-fetch";
 import fs from "fs";
+import path from "path";
 import puppeteer from "puppeteer";
-import { URL } from "url";
+import { URL, fileURLToPath } from "url";
 import { spawn } from "child_process";
 import { monthToHuman } from "./util/dateHelper.js";
 import { Buffer } from "buffer";
@@ -15,90 +16,87 @@ const SECRET_CLIENT_ID = process.env.SPOTIFY_CLIENT_SECRET;
 const PLAYLIST_ID = process.env.SPOTIFY_PLAYLIST_ID;
 
 /*
- * function to get Asia Pop 40's website because
- * the new website is client-side rendered
- *
+ * function that gets Asia Pop 40's csv from airtable
  */
-const getAP40 = async () => {
-  // return new Promise(async (resolve, reject) => {
-    // link airtable 10/4/2023 https://airtable.com/embed/shrt4bV5k6wm3OVI0
-    console.log("Running puppeteer to get Asia Pop 40's content ...");
+const getAP40csv = async () => {
+  // link airtable 10/4/2023 https://airtable.com/embed/shrt4bV5k6wm3OVI0
+  console.log("Running puppeteer to get Asia Pop 40's table ...");
 
-    const browser = await puppeteer.launch({ headless: false, devtools: true });
+  try {
+    const browser = await puppeteer.launch({ headless: false });
     const page = await browser.newPage();
     page.setDefaultTimeout(0);
+
     await page.goto("https://airtable.com/shrt4bV5k6wm3OVI0", {
       waitUntil: "networkidle2",
     });
 
-    let AP40content = await page.content()
+    await page.click('[aria-label="More view options"]');
+    await page.click('[data-tutorial-selector-id="viewMenuItem-viewExportCsv"]');
 
-    console.log("Done scraping Asia Pop 40's webiste");
+    await page.waitForTimeout(3000);
+
+    // set download path
+    const downloadPath = path.join(path.resolve(path.dirname(fileURLToPath(import.meta.url))) , "/temp/");
+    await page._client.send("Page.setDownloadBehavior", {
+      behavior: "allow",
+      downloadPath: downloadPath,
+    });
+
+    await page.click('div.dialog div[role="button"][tabindex="20002"]');
+
+    // rename the downloaded file using page response header content-type
+    page.on('response', response => {
+      const contentType = response.headers()['content-type'];
+      if ( contentType === 'text/csv') {
+
+        let fileName = path.basename(response.request().url());
+        fileName = fileName.slice(0, 25);
+
+        fileName = decodeURIComponent(fileName);
+
+        setTimeout(() => {
+          fs.rename(`${downloadPath}/${fileName}`, `${downloadPath}/ap40.csv`, (err) => {
+            if (err) throw err;
+            console.log(`Successfully renamed into ${downloadPath}/ap40.csv!`);
+          });
+        }, 3000);
+      }
+    });
+
+    await page.waitForTimeout(5000);
     await browser.close();
-  // });
+
+    console.log("Successfully downloaded Asia Pop 40's table!");
+  } catch (err) {
+    console.error(`Error in getAP40 : ${err}`);
+  }
 }
 
 /**
- * function that scrapes Asia Pop 40's website.
- * takes texts from classes "chart-track-<title or rank or artists>" ,
- * change them into array, and returns the array object (json)
+ * function that parses the csv file
+ * returns an array of objects
  */
-const scrapeAP40 = async () => {
+const parseAP40csv = async () => {
   return new Promise(async (resolve, reject) => {
-    console.log(`Scraping Asia Pop 40's website...`);
+    console.log("Parsing Asia Pop 40's csv ...");
+    let chartList = [];
+    const csvPath = path.join(path.resolve(path.dirname(fileURLToPath(import.meta.url))) , "/temp/ap40.csv");
 
-    let AP40HTML;
-    // let songs = [];
+    parseFile(csvPath, { headers: true })
+      .on("data", (row) => {
+        // chooses what goes into the chartList
+        let chartData = {};
+        chartData.title = row["Song Title"];
+        chartData.artists = row["Artists"];
+        chartData.spotifyURI = "";
 
-    try {
-      const AP40Fetch = await fetch("https://asiapop40.com");
-      if (!AP40Fetch.ok) throw new Error("not fetching asiapop40 correctly");
-      AP40HTML = await AP40Fetch.text();
-    } catch (err) {
-      console.error(`Error in scrapeAP40 : ${err}`);
-      reject();
-    }
-
-    const $ = cheerio.load(AP40HTML);
-    //
-    // $(".accordion-item").each((i, chartItem) => {
-    //   if (i < 40) {
-    //     let chartNode = $(chartItem);
-    //
-    //     // find the title, removing the '-', and then get the text
-    //     let chartSongTitle = chartNode
-    //     .find(".chart-track-title")
-    //     .children()
-    //     .remove()
-    //     .end()
-    //     .text();
-    //     chartSongTitle = chartSongTitle
-    //       .replace("ft. ", "")
-    //       .replace(/[\[\]]+/g, "");
-    //
-    //     let chartSongArtists = [];
-    //     chartNode
-    //       .find(".chart-artist-title")
-    //       .children()
-    //       .each((j, artist) => {
-    //         let artistNode = $(artist);
-    //         chartSongArtists.push(artistNode.text());
-    //       });
-    //
-    //     let chartData = {
-    //       title: chartSongTitle,
-    //       artists: chartSongArtists,
-    //       spotifyURI: "",
-    //     };
-    //
-    //     songs.push(chartData);
-    //   }
-    // });
-
-    // console.log(`Done scraping Asia Pop 40's webiste`);
-    resolve($);
+        chartList.push(chartData);
+      })
+      .on("end", () => resolve(chartList))
+      .on("error", err => reject(`Error in parseAP40csv : ${err}`));
   });
-};
+}
 
 /**
  * function to spawn a server child processs
@@ -121,48 +119,12 @@ const startServer = () => {
   }, 60000);
 };
 
-/*
- * function to request access token to spotify because
- * this function is called after getting user authorized token (the end of getUserAuthCode)
- *
- */
-const getSpotifyAccessToken = (code) => {
-  const encodedAuthClient = Buffer.from(
-    `${CLIENT_ID}:${SECRET_CLIENT_ID}`,
-    "utf-8"
-  ).toString("base64");
-  const redirectURL = new URL("http://localhost:3000/get-token-hash");
-
-  return new Promise(async (resolve, reject) => {
-    try {
-      let token = await fetch("https://accounts.spotify.com/api/token", {
-        method: "post",
-        headers: {
-          Authorization: "Basic " + encodedAuthClient,
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: `grant_type=authorization_code&code=${code}&redirect_uri=${redirectURL.href}`,
-      });
-      if (!token.ok) throw new Error("not fetching getSpotifyAccessToken correctly");
-      token = await token.json();
-      token = token.access_token;
-
-      console.log("Done getting spotify access token");
-      resolve(token);
-    } catch (err) {
-      console.error(`Error in getSpotifyAccessToken : ${err}`);
-      reject();
-    }
-  });
-};
-
 /**
  * function to perform login and get authorization token from authorization code flow
- * and then authorization token is exchanged into Access Token
  *
- * @returns promise with resolve token / reject undefined
+ * @returns promise with resolve authorization token / reject undefined
  */
-const getSpotifyToken = () => {
+const automateSpotifyToken = () => {
   return new Promise(async (resolve, reject) => {
     console.log(`Running puppeteer to get the token ...`);
 
@@ -191,30 +153,55 @@ const getSpotifyToken = () => {
 
     await page.click("button#login-button", { "button": "left" });
 
+    await page.waitForNavigation({
+      timeout: 10000,
+      waitUntil: "networkidle2",
+    });
+
+    let authToken = await page.content();
+    resolve(authToken);
+    console.log(`Done getting the token!`);
+
+    await browser.close();
+  });
+};
+
+/*
+ * function that changes authorization token into access token
+ *
+ * @param {string} authToken
+ * @returns promise with resolve access token / reject undefined
+ */
+const getSpotifyAccessToken = (authToken) => {
+  let code = authToken.replace(/<([^>]+)>/gi, ""); // strip tags
+  const encodedAuthClient = Buffer.from(
+    `${CLIENT_ID}:${SECRET_CLIENT_ID}`,
+    "utf-8"
+  ).toString("base64");
+
+  // TODO: this url should've been taken from the env
+  const redirectURL = new URL("http://localhost:3000/get-token-hash");
+
+  return new Promise(async (resolve, reject) => {
     try {
-      await page.waitForNavigation({
-        timeout: 10000,
-        waitUntil: "networkidle2",
+      let token = await fetch("https://accounts.spotify.com/api/token", {
+        method: "post",
+        headers: {
+          Authorization: "Basic " + encodedAuthClient,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: `grant_type=authorization_code&code=${code}&redirect_uri=${redirectURL.href}`,
       });
+      if (!token.ok) throw new Error("not fetching getSpotifyAccessToken correctly");
+      token = await token.json();
+      token = token.access_token;
 
-      let authToken = await page.content();
-      await browser.close();
-
-      authToken = authToken.replace(/<([^>]+)>/gi, ""); // strip tags
-      console.log(`Done taking authToken`);
-
-      let token;
-      try {
-        token = await getSpotifyAccessToken(authToken);
-      } catch (err) {
-        console.error(`Error access token inside getSpotifyToken : ${err}`);
-        return;
-      }
+      console.log("Done getting spotify access token!");
+      console.log(`Spotify access token : ${token}`);
       resolve(token);
-
     } catch (err) {
-      console.error(`Error in navigation/content/closing browser : ${err}`);
-      reject(err);
+      console.error(`Error in getSpotifyAccessToken : ${err}`);
+      reject();
     }
   });
 };
@@ -228,7 +215,7 @@ const removeSpotifyPlaylistSongs = async (token) => {
   return new Promise(async (resolve, reject) => {
     console.log(`Removing songs on spotify playlist...`);
 
-    let songURIs = fs.readFileSync(process.cwd() + "/src/uris.json", "utf8");
+    let songURIs = fs.readFileSync(process.cwd() + "/src/temp/uris.json", "utf8");
     songURIs = JSON.parse(songURIs);
 
     let tracks = [];
@@ -309,31 +296,35 @@ const searchSpotifySongURIs = async (token, songs) => {
   return new Promise(async (resolve, reject) => {
     console.log(`Searching for track's URI in spotify...`);
 
-    let songURIs = [];
+    try {
+      let songURIs = [];
 
-    for (let song of songs) {
-      const artist = song.artists.join(" ");
-      const title = song.title.replace(/'/gi, "").replace(/"/gi, "");
-      // why not chaining replace before encodingURI?
-      // the stupid function unable to encode parentheses "()"
-      // because of that, if i chain replace before the function (e.g. ".replace(/\(/, '%28')"),
-      // it will encode the %
-      const searchQuery = encodeURI(title + artist)
+      for (let song of songs) {
+        const artist = song.artists;
+        const title = song.title.replace(/'/gi, "").replace(/"/gi, "");
+        // why not chaining replace before encodingURI?
+        // the stupid function unable to encode parentheses "()"
+        // because of that, if i chain replace before the function (e.g. ".replace(/\(/, '%28')")),
+        // it will encode the %
+        const searchQuery = encodeURI(title + artist)
         .replace(/\(/, "")
         .replace(/\)/, "");
 
-      const searchSongResult = await searchSpotifySongURI(token, searchQuery);
-      // console.log(searchQuery);
-      songURIs.push(searchSongResult);
-    }
+        const searchSongResult = await searchSpotifySongURI(token, searchQuery);
+        songURIs.push(searchSongResult);
+      }
 
-    fs.writeFileSync(
-      process.cwd() + "/src/uris.json",
-      JSON.stringify(songURIs),
-      "utf8"
-    );
-    console.log(`Done searching`);
-    resolve(songURIs);
+      fs.writeFileSync(
+        process.cwd() + "/src/temp/uris.json",
+        JSON.stringify(songURIs),
+        "utf8"
+      );
+      console.log(`Done searching every songs URIs!`);
+      resolve(songURIs);
+    } catch (err) {
+      console.error(`Error inside searchSpotifySongURIs : ${err}`);
+      reject();
+    }
   });
 };
 
@@ -360,9 +351,9 @@ const addSpotifyPlaylistSongs = async (token, songURIs) => {
           body: JSON.stringify(dataURIs),
         }
       );
-      if (!response.ok) throw new Error("not fetching addSpotifyPlaylistSongs correctly");
+      if (!response.ok) throw new Error(`not fetching addSpotifyPlaylistSongs correctly ${response.status}`);
 
-      console.log(`Done adding searched songs`);
+      console.log(`Done adding searched songs into spotify!`);
       resolve();
     } catch (err) {
       console.error(`Error inside addSpotifyPlaylistSongs : ${err}`);
@@ -414,10 +405,11 @@ const updateSpotifyPlaylistTitle = async (token) => {
 };
 
 export {
-  getAP40,
-  scrapeAP40,
+  getAP40csv,
+  parseAP40csv,
   startServer,
-  getSpotifyToken,
+  automateSpotifyToken,
+  getSpotifyAccessToken,
   removeSpotifyPlaylistSongs,
   searchSpotifySongURIs,
   addSpotifyPlaylistSongs,
