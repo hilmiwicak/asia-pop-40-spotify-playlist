@@ -64,7 +64,7 @@ const getAP40csv = async () => {
       }
     });
 
-    await page.waitForTimeout(5000);
+    await page.waitForTimeout(7000);
     await browser.close();
 
     console.log("Successfully downloaded Asia Pop 40's table!");
@@ -93,7 +93,10 @@ const parseAP40csv = async () => {
 
         chartList.push(chartData);
       })
-      .on("end", () => resolve(chartList))
+      .on("end", () => {
+        console.log("Successfully parsed Asia Pop 40's csv!");
+        resolve(chartList)
+      })
       .on("error", err => reject(`Error in parseAP40csv : ${err}`));
   });
 }
