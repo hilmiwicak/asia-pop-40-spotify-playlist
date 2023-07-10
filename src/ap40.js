@@ -23,7 +23,7 @@ const getAP40csv = async () => {
   console.log("Running puppeteer to get Asia Pop 40's table ...");
 
   try {
-    const browser = await puppeteer.launch({ headless: false });
+    const browser = await puppeteer.launch();
     const page = await browser.newPage();
     page.setDefaultTimeout(0);
 
@@ -140,7 +140,7 @@ const automateSpotifyToken = () => {
       redirectURL.href +
       "&scope=playlist-modify-public";
 
-    const browser = await puppeteer.launch({ headless: false });
+    const browser = await puppeteer.launch();
 
     const page = await browser.newPage();
     await page.setDefaultTimeout(0);
