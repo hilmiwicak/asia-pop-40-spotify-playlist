@@ -85,7 +85,10 @@ const parseAP40csv = async () => {
 
     parseFile(csvPath, { headers: true })
       .on("data", (row) => {
-        // chooses what goes into the chartList
+        if (row["Song Title"] == "" || row["Artists"] == "") {
+          return;
+        }
+
         let chartData = {};
         chartData.title = row["Song Title"];
         chartData.artists = row["Artists"];
