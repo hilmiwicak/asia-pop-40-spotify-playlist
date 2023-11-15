@@ -120,9 +120,10 @@ const startServer = () => {
     console.error(`error server : ${dataErr}`);
   });
 
-  setTimeout(() => {
-    server.kill();
-  }, 60000);
+  server.kill('SIGINT');
+//   setTimeout(() => {
+//     server.kill();
+//   }, 60000);
 };
 
 /**
