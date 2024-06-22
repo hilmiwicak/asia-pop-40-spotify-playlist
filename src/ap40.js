@@ -23,7 +23,7 @@ const getAP40csv = async () => {
   console.log("Running puppeteer to get Asia Pop 40's table ...");
 
   try {
-    const browser = await puppeteer.launch();
+    const browser = await puppeteer.launch({headless: false});
     const page = await browser.newPage();
     page.setDefaultTimeout(0);
 
@@ -81,6 +81,7 @@ const parseAP40csv = async () => {
   return new Promise(async (resolve, reject) => {
     console.log("Parsing Asia Pop 40's csv ...");
     let chartList = [];
+    let chartListSorted = [];
     const csvPath = path.join(path.resolve(path.dirname(fileURLToPath(import.meta.url))) , "/temp/ap40.csv");
 
     parseFile(csvPath, { headers: true })
@@ -97,8 +98,12 @@ const parseAP40csv = async () => {
         chartList.push(chartData);
       })
       .on("end", () => {
+        for (let i = chartList.length-1; i>= 0; i--){
+          chartListSorted.push(chartList[i])
+        }
+
         console.log("Successfully parsed Asia Pop 40's csv!");
-        resolve(chartList)
+        resolve(chartListSorted)
       })
       .on("error", err => reject(`Error in parseAP40csv : ${err}`));
   });
@@ -143,7 +148,7 @@ const automateSpotifyToken = () => {
       redirectURL.href +
       "&scope=playlist-modify-public";
 
-    const browser = await puppeteer.launch();
+    const browser = await puppeteer.launch({headless: false});
 
     const page = await browser.newPage();
     await page.setDefaultTimeout(0);
@@ -268,7 +273,7 @@ const searchSpotifySongURI = async (token, searchQuery) => {
   const spotifySearch = await fetch(
     "https://api.spotify.com/v1/search?q=" +
       searchQuery +
-      "&type=track&limit=1",
+      "&type=track&limit=2",
     {
       headers: {
         Authorization: "Bearer " + token,
@@ -287,6 +292,7 @@ const searchSpotifySongURI = async (token, searchQuery) => {
 
   try {
     if (!spotifySearchResult.tracks.items[0].uri) throw new Error("no uri");
+    // console.log(spotifySearchResult.tracks.items[0]);
     return spotifySearchResult.tracks.items[0].uri;
   } catch (err) {
     console.error(`No uri while searching : ${searchQuery} : ${err}`);
@@ -308,13 +314,16 @@ const searchSpotifySongURIs = async (token, songs) => {
       for (let song of songs) {
         const artist = song.artists;
         const title = song.title.replace(/'/gi, "").replace(/"/gi, "");
+
         // why not chaining replace before encodingURI?
         // the stupid function unable to encode parentheses "()"
         // because of that, if i chain replace before the function (e.g. ".replace(/\(/, '%28')")),
         // it will encode the %
-        const searchQuery = encodeURI(title + artist)
-        .replace(/\(/, "")
-        .replace(/\)/, "");
+        const searchQuery = encodeURI(title + " " + artist)
+          .replace(/\(/, "")
+          .replace(/\)/, "");
+
+        // console.log(searchQuery);
 
         const searchSongResult = await searchSpotifySongURI(token, searchQuery);
         songURIs.push(searchSongResult);

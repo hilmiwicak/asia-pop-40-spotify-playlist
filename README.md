@@ -45,5 +45,5 @@ You can see this inside [src/index.js](/src/index.js)
 
 ## To Do
 
-- [ ] kill server child process after getting the token
+- [ ] kill server child process after getting the token. probably using PID
 - [ ] refactor the code to be more understandable
