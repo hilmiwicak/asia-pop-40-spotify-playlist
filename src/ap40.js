@@ -27,7 +27,7 @@ const getAP40csv = async () => {
     const page = await browser.newPage();
     page.setDefaultTimeout(0);
 
-    await page.goto("https://airtable.com/shrt4bV5k6wm3OVI0", {
+    await page.goto("https://airtable.com/appekkpK3Tk1BR31o/shr8qCEUdXeXLKBZy", {
       waitUntil: "networkidle2",
     });
 
@@ -81,7 +81,7 @@ const parseAP40csv = async () => {
   return new Promise(async (resolve, reject) => {
     console.log("Parsing Asia Pop 40's csv ...");
     let chartList = [];
-    let chartListSorted = [];
+    // let chartListSorted = [];
     const csvPath = path.join(path.resolve(path.dirname(fileURLToPath(import.meta.url))) , "/temp/ap40.csv");
 
     parseFile(csvPath, { headers: true })
@@ -98,12 +98,12 @@ const parseAP40csv = async () => {
         chartList.push(chartData);
       })
       .on("end", () => {
-        for (let i = chartList.length-1; i>= 0; i--){
-          chartListSorted.push(chartList[i])
-        }
+        // for (let i = chartList.length-1; i>= 0; i--){
+        //   chartListSorted.push(chartList[i])
+        // }
 
         console.log("Successfully parsed Asia Pop 40's csv!");
-        resolve(chartListSorted)
+        resolve(chartList)
       })
       .on("error", err => reject(`Error in parseAP40csv : ${err}`));
   });
@@ -164,12 +164,18 @@ const automateSpotifyToken = () => {
 
     await page.click("button#login-button", { "button": "left" });
 
-    await page.waitForNavigation({
-      timeout: 10000,
-      waitUntil: "networkidle2",
-    });
+    // await page.waitForNavigation({
+    //   timeout: 10000,
+    //   waitUntil: "networkidle2",
+    // });
+
+    const url = new URL(page.url());
+    if (url.host != 'localhost') {
+      await page.waitForTimeout(35000);
+    }
 
     let authToken = await page.content();
+    console.log(`page content authToken: ${authToken}`);
     resolve(authToken);
     console.log(`Done getting the token!`);
 
@@ -273,7 +279,7 @@ const searchSpotifySongURI = async (token, searchQuery) => {
   const spotifySearch = await fetch(
     "https://api.spotify.com/v1/search?q=" +
       searchQuery +
-      "&type=track&limit=2",
+      "&type=track&limit=1",
     {
       headers: {
         Authorization: "Bearer " + token,
@@ -285,6 +291,7 @@ const searchSpotifySongURI = async (token, searchQuery) => {
 
   if (!spotifySearch.ok) {
     console.error("not fetching spotify search correctly");
+    console.log(spotifySearch);
     return;
   }
 
@@ -292,10 +299,15 @@ const searchSpotifySongURI = async (token, searchQuery) => {
 
   try {
     if (!spotifySearchResult.tracks.items[0].uri) throw new Error("no uri");
+    console.log(`name : ${JSON.stringify(spotifySearchResult.tracks.items[0].name, null, 3)}`);
+    console.log(`external_urls : ${JSON.stringify(spotifySearchResult.tracks.items[0].external_urls, null, 3)}`);
+    console.log(`uri : ${JSON.stringify(spotifySearchResult.tracks.items[0].uri, null, 3)}\n`);
     // console.log(spotifySearchResult.tracks.items[0]);
     return spotifySearchResult.tracks.items[0].uri;
   } catch (err) {
     console.error(`No uri while searching : ${searchQuery} : ${err}`);
+    // if program unable to search, it defaults to put Mr. Brightside song
+    return "spotify:track:003vvx7Niy0yvhvHt4a68B";
   }
 };
 
@@ -312,8 +324,9 @@ const searchSpotifySongURIs = async (token, songs) => {
       let songURIs = [];
 
       for (let song of songs) {
-        const artist = song.artists;
-        const title = song.title.replace(/'/gi, "").replace(/"/gi, "");
+        const artist = "artist:" + song.artists;
+        const title = "track:" + song.title;
+        // const title = song.title.replace(/'/gi, "").replace(/"/gi, "");
 
         // why not chaining replace before encodingURI?
         // the stupid function unable to encode parentheses "()"
@@ -323,7 +336,7 @@ const searchSpotifySongURIs = async (token, songs) => {
           .replace(/\(/, "")
           .replace(/\)/, "");
 
-        // console.log(searchQuery);
+        console.log(`searchQuery: ${searchQuery}`);
 
         const searchSongResult = await searchSpotifySongURI(token, searchQuery);
         songURIs.push(searchSongResult);
@@ -334,6 +347,7 @@ const searchSpotifySongURIs = async (token, songs) => {
         JSON.stringify(songURIs),
         "utf8"
       );
+      console.log(`All of songURIs : ${songURIs}`);
       console.log(`Done searching every songs URIs!`);
       resolve(songURIs);
     } catch (err) {
@@ -350,9 +364,14 @@ const addSpotifyPlaylistSongs = async (token, songURIs) => {
   return new Promise(async (resolve, reject) => {
     console.log("Adding searched songs to spotify playlist ...");
 
+    // const filteredURIs = songURIs.filter(uri => uri !== null && uri !== "null");
+    const filteredURIs = songURIs.filter(uri => uri);
+
     const dataURIs = {
-      uris: songURIs,
+      uris: filteredURIs,
     };
+
+    console.log(`filtered dataURIs: ${JSON.stringify(dataURIs, "", "\t")}`);
 
     try {
       let response = await fetch(

@@ -9,6 +9,7 @@ import {
   addSpotifyPlaylistSongs,
   updateSpotifyPlaylistTitle,
 } from "./ap40.js";
+import fs from "fs";
 
 /**
  * NOTES :
@@ -20,7 +21,7 @@ import {
 (async () => {
   let chartList, authToken, accessToken, songsURI;
 
-  await getAP40csv();
+  // await getAP40csv();
   chartList = await parseAP40csv();
 
   startServer();
@@ -30,6 +31,11 @@ import {
   removeSpotifyPlaylistSongs(accessToken);
 
   songsURI = await searchSpotifySongURIs(accessToken, chartList);
+
+  // // now the current problem is not being able to send post addSpotifyPlaylistSongs
+  // songsURI = fs.readFileSync(process.cwd() + "/src/temp/uris.json", "utf8");
+  // const songsURIs = JSON.parse(songsURI);
+  // addSpotifyPlaylistSongs(accessToken, songsURIs);
 
   addSpotifyPlaylistSongs(accessToken, songsURI);
 
