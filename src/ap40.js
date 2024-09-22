@@ -81,7 +81,7 @@ const parseAP40csv = async () => {
   return new Promise(async (resolve, reject) => {
     console.log("Parsing Asia Pop 40's csv ...");
     let chartList = [];
-    // let chartListSorted = [];
+    let result = [];
     const csvPath = path.join(path.resolve(path.dirname(fileURLToPath(import.meta.url))) , "/temp/ap40.csv");
 
     parseFile(csvPath, { headers: true })
@@ -91,19 +91,20 @@ const parseAP40csv = async () => {
         }
 
         let chartData = {};
-        chartData.title = row["Song Title"];
-        chartData.artists = row["Artists"];
-        chartData.spotifyURI = "";
+        chartData["This Week"] = row["This Week"];
+        chartData["title"] = row["Song Title"];
+        chartData["artists"] = row["Artists"];
+        chartData["spotifyURI"] = "";
 
         chartList.push(chartData);
       })
       .on("end", () => {
-        // for (let i = chartList.length-1; i>= 0; i--){
-        //   chartListSorted.push(chartList[i])
-        // }
+        result = chartList
+          .sort((a, b) => a["This Week"] - b["This Week"])
+          .map(({ title, artists, spotifyURI }) => ({ title, artists, spotifyURI }));
 
         console.log("Successfully parsed Asia Pop 40's csv!");
-        resolve(chartList)
+        resolve(result);
       })
       .on("error", err => reject(`Error in parseAP40csv : ${err}`));
   });
