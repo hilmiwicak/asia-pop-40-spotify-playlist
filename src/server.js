@@ -1,11 +1,15 @@
 import http from "http";
 import "dotenv/config";
-import fs from "fs";
 
 const HOST = process.env.HOST || "localhost";
 const PORT = process.env.PORT || 3000;
 
-const serverHandler = async (req, res) => {
+/**
+ * simple http server to get the token from the spotify auth
+ *
+ * GET /get-token-hash?code=code_token
+ */
+const server = http.createServer(async (req, res) => {
   const requestURL = new URL(req.url, `http://${req.headers.host}`);
 
   let tokenSpotify = "";
@@ -17,16 +21,38 @@ const serverHandler = async (req, res) => {
     tokenSpotify = requestURL.searchParams.get("code");
     console.log(`spotify auth token : ${tokenSpotify}`);
 
-    res.writeHead(201, {
+    res.writeHead(200, {
       "Content-Type": "text/plain",
     });
 
     res.write(tokenSpotify);
     res.end();
+
+    stopServer();
   }
+});
+
+/**
+ * Start the server
+ *
+ * @returns {Promise<void>}
+ */
+const startServer = async () => {
+  server.listen(PORT, HOST, () => {
+    console.log(`Server is running at ${HOST}:${PORT}`);
+  });
 };
 
-const server = http.createServer(serverHandler);
-server.listen(PORT, HOST, () => {
-  console.log(`Server is running at ${HOST}:${PORT}`);
-});
+/**
+ * Stop the server
+ *
+ * @returns {Promise<void>}
+ */
+const stopServer = async () => {
+  console.log("closing server");
+  server.close();
+}
+
+export { 
+  startServer,
+};
