@@ -1,10 +1,9 @@
 import "dotenv/config.js";
-import { parseFile } from "fast-csv";
+import * as cheerio from "cheerio";
 import fetch from "node-fetch";
 import fs from "fs";
-import path from "path";
 import puppeteer from "puppeteer";
-import { URL, fileURLToPath } from "url";
+import { URL } from "url";
 import { monthToHuman } from "./util/dateHelper.js";
 import { Buffer } from "buffer";
 
@@ -14,102 +13,65 @@ const CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
 const SECRET_CLIENT_ID = process.env.SPOTIFY_CLIENT_SECRET;
 const PLAYLIST_ID = process.env.SPOTIFY_PLAYLIST_ID;
 const redirectURL = new URL("http://localhost:3000/get-token-hash");
-const downloadPath = path.join(path.resolve(path.dirname(fileURLToPath(import.meta.url))) , "/temp/");
-const csvPath = path.join(path.resolve(path.dirname(fileURLToPath(import.meta.url))) , "/temp/ap40.csv");
 const URIPath = process.cwd() + "/src/temp/uris.json";
 
 /*
- * function that gets Asia Pop 40's csv from airtable
+ * function that scrapes AP40 website to get Spotify URI
  *
  * @async
  * @param {void}
- * @returns {Promise<void>} method that returns nothing
+ * @returns {Promise<array>} returns spotify URIs
  */
-const getAP40csv = async () => {
-  // link airtable 10/4/2023 https://airtable.com/embed/shrt4bV5k6wm3OVI0
-  console.log("Running puppeteer to get Asia Pop 40's table ...");
-
-  try {
-    const browser = await puppeteer.launch({headless: false});
-    const page = await browser.newPage();
-    page.setDefaultTimeout(0);
-
-    await page.goto("https://airtable.com/appekkpK3Tk1BR31o/shr8qCEUdXeXLKBZy", {
-      waitUntil: "networkidle2",
-    });
-
-    await page.click('[aria-label="More view options"]');
-    await page.click('[data-tutorial-selector-id="viewMenuItem-viewExportCsv"]');
-
-    await page._client.send("Page.setDownloadBehavior", {
-      behavior: "allow",
-      downloadPath: downloadPath,
-    });
-
-    page.on('response', async (response) => {
-      const contentType = response.headers()['content-type'];
-      if (contentType !== 'text/csv') return;
-
-      let fileName = path.basename(response.request().url());
-
-      // removing all query parameter from the url
-      fileName = fileName.replace(/\?.*$/g, '');
-
-      // setTimeout is used because sometimes the download speed is slow
-      setTimeout(() => {
-        fs.rename(`${downloadPath}/${fileName}`, `${csvPath}`, (err) => {
-          if (err) throw err;
-          console.log(`Successfully renamed ${downloadPath}/${fileName} into ${csvPath}`);
-        });
-      }, 3000);
-    });
-
-    await page.waitForTimeout(7000);
-    await browser.close();
-
-    console.log("Successfully downloaded Asia Pop 40's table!");
-  } catch (err) {
-    console.error(`Error in getAP40 : ${err}`);
-  }
-}
-
-/**
- * function that parses the csv file that returns an array of objects
- *
- * @async
- * @param {void}
- * @returns {Promise<array>} array of objects
- */
-const parseAP40csv = async () => {
+const scrapeAP40 = async () => {
   return new Promise(async (resolve, reject) => {
-    console.log("Parsing Asia Pop 40's csv ...");
-    let chartList = [];
-    let result = [];
+    console.log("Running puppeteer to get Asia Pop 40's table ...");
 
-    parseFile(csvPath, { headers: true })
-      .on("data", (row) => {
-        let chartData = {};
-        chartData["This Week"] = row["This Week"];
-        chartData["title"] = row["Song Title"];
-        chartData["artists"] = row["Artists"];
-        chartData["spotifyURI"] = "";
+    try {
+      const browser = await puppeteer.launch({headless: false});
 
-        chartList.push(chartData);
-      })
-      .on("end", () => {
-        result = chartList
-          .sort((a, b) => a["This Week"] - b["This Week"])
-          .map(({ title, artists, spotifyURI }) => ({ title, artists, spotifyURI }));
+      const page = await browser.newPage();
+      await page.setDefaultTimeout(0);
 
-        console.log("Successfully parsed Asia Pop 40's csv!");
-        resolve(result);
-      })
-      .on("error", err => {
-        console.error(`Error in parseAP40csv : ${err}`);
-        reject();
-        return;
+      await page.goto("https://asiapop40.com");
+      await page.waitForTimeout(5000);
+
+      const html = await page.content();
+      await browser.close();
+
+      const $ = cheerio.load(html);
+
+      let spotifyURIs = [];
+
+      $("tbody tr").each((_, el) => {
+        // the first td could be the actual number of the chart, BuzzzTrack, Hit Prediction, or Concert Track
+        const curChar = $(el).children("td").first().text().trim();
+
+        if (curChar == "BuzzzTrack" || curChar == "Hit Prediction" || curChar == "Concert Track") {
+          return;
+        }
+
+        // console.log(`\n${$(el).find("a").first().prop("innerHTML")} = `)
+        const spotifyTrackURL = $(el).find("a").first().prop("href");
+        // console.log(spotifyTrackURL);
+
+        let URI = spotifyTrackURL.slice(spotifyTrackURL.lastIndexOf("/") + 1, spotifyTrackURL.length);
+        URI = "spotify:track:" + URI;
+        // console.log(URI);
+        spotifyURIs.push(URI);
       });
-  });
+
+      fs.writeFileSync(
+        URIPath,
+        JSON.stringify(spotifyURIs),
+        "utf8"
+      );
+
+      resolve(spotifyURIs);
+
+    } catch (err) {
+      console.error(`Error in scrapeAP40 : ${err}`);
+    }
+  })
 }
 
 /**
@@ -257,104 +219,6 @@ const removeSpotifyPlaylistSongs = async (token) => {
 };
 
 /**
- * function for searching one song uri
- *
- * @async
- * @param {string} token
- * @param {string} searchQuery
- * @returns {Promise<string>} promise with resolve uri / reject null
- */
-const searchSpotifySongURI = async (token, searchQuery) => {
-  const spotifySearch = await fetch(
-    "https://api.spotify.com/v1/search?q=" +
-      searchQuery +
-      "&type=track&limit=1",
-    {
-      headers: {
-        Authorization: "Bearer " + token,
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-    }
-  );
-
-  if (!spotifySearch.ok) {
-    console.error("not fetching spotify search correctly");
-    console.log(spotifySearch);
-    return;
-  }
-
-  try {
-    const spotifySearchResult = await spotifySearch.json();
-
-    if (!spotifySearchResult.tracks.items[0].uri) throw new Error("no uri");
-
-    console.log(`name : ${JSON.stringify(spotifySearchResult.tracks.items[0].name, null, 3)}`);
-    console.log(`external_urls : ${JSON.stringify(spotifySearchResult.tracks.items[0].external_urls, null, 3)}`);
-    console.log(`uri : ${JSON.stringify(spotifySearchResult.tracks.items[0].uri, null, 3)}\n`);
-    // console.log(spotifySearchResult.tracks.items[0]);
-
-    return spotifySearchResult.tracks.items[0].uri;
-  } catch (err) {
-    console.error(`No uri while searching : ${searchQuery} : ${err}`);
-
-    // if program unable to search, it defaults to put Mr. Brightside song
-    return "spotify:track:003vvx7Niy0yvhvHt4a68B";
-  }
-};
-
-/**
- * takes songs json, change them into array, search
- * for each song's uri through spotify search API from the array
- * and put them into the array, change them into json
- *
- * @async
- * @param {string} token
- * @param {array} songs
- * @returns {Promise<array>} promise with resolve array of uri / reject undefined
- */
-const searchSpotifySongURIs = async (token, songs) => {
-  return new Promise(async (resolve, reject) => {
-    console.log(`Searching for track's URI in spotify...`);
-
-    try {
-      let songURIs = [];
-
-      for (let song of songs) {
-        const artist = "artist:" + song.artists;
-        const title = "track:" + song.title;
-        // const title = song.title.replace(/'/gi, "").replace(/"/gi, "");
-
-        // why not chaining replace before encodingURI?
-        // the stupid function unable to encode parentheses "()"
-        // because of that, if i chain replace before the function (e.g. ".replace(/\(/, '%28')")),
-        // it will encode the %
-        const searchQuery = encodeURI(title + " " + artist)
-          .replace(/\(/, "")
-          .replace(/\)/, "");
-
-        console.log(`searchQuery: ${searchQuery}`);
-
-        const searchSongResult = await searchSpotifySongURI(token, searchQuery);
-        songURIs.push(searchSongResult);
-      }
-
-      fs.writeFileSync(
-        URIPath,
-        JSON.stringify(songURIs),
-        "utf8"
-      );
-      console.log(`All of songURIs : ${songURIs}`);
-      console.log(`Done searching every songs URIs!`);
-      resolve(songURIs);
-    } catch (err) {
-      console.error(`Error inside searchSpotifySongURIs : ${err}`);
-      reject();
-    }
-  });
-};
-
-/**
  * function that add all songs to the playlist
  *
  * @async
@@ -447,12 +311,10 @@ const updateSpotifyPlaylistTitle = async (token) => {
 };
 
 export {
-  getAP40csv,
-  parseAP40csv,
+  scrapeAP40,
   automateSpotifyToken,
   getSpotifyAccessToken,
   removeSpotifyPlaylistSongs,
-  searchSpotifySongURIs,
   addSpotifyPlaylistSongs,
   updateSpotifyPlaylistTitle,
 };
