@@ -12,7 +12,7 @@ const SPOTIFY_EMAIL = process.env.SPOTIFY_EMAIL;
 const CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
 const SECRET_CLIENT_ID = process.env.SPOTIFY_CLIENT_SECRET;
 const PLAYLIST_ID = process.env.SPOTIFY_PLAYLIST_ID;
-const redirectURL = new URL("http://localhost:3000/get-token-hash");
+const redirectURL = new URL("http://127.0.0.1:3000/get-token-hash");
 const URIPath = process.cwd() + "/src/temp/uris.json";
 
 /*
@@ -115,7 +115,7 @@ const automateSpotifyToken = () => {
     // });
 
     const url = new URL(page.url());
-    if (url.host != 'localhost') await page.waitForTimeout(35000);
+    if (url.host != '127.0.0.1') await page.waitForTimeout(35000);
 
     let authToken = await page.content();
     console.log(`page content authToken: ${authToken}`);

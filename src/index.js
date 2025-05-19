@@ -18,7 +18,7 @@ import { startServer } from "./server.js";
   authToken = await automateSpotifyToken();
   accessToken = await getSpotifyAccessToken(authToken);
 
-  removeSpotifyPlaylistSongs(accessToken);
+  await removeSpotifyPlaylistSongs(accessToken);
 
   // songsURI = fs.readFileSync(process.cwd() + "/src/temp/uris.json", "utf8");
   // const songsURIs = JSON.parse(songsURI);
