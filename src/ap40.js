@@ -60,12 +60,6 @@ const scrapeAP40 = async () => {
         spotifyURIs.push(URI);
       });
 
-      fs.writeFileSync(
-        URIPath,
-        JSON.stringify(spotifyURIs),
-        "utf8"
-      );
-
       resolve(spotifyURIs);
 
     } catch (err) {
@@ -255,6 +249,13 @@ const addSpotifyPlaylistSongs = async (token, songURIs) => {
       if (!response.ok) throw new Error(`not fetching addSpotifyPlaylistSongs correctly ${response.status}`);
 
       console.log(`Done adding searched songs into spotify!`);
+
+      fs.writeFileSync(
+        URIPath,
+        JSON.stringify(spotifyURIs),
+        "utf8"
+      );
+
       resolve();
     } catch (err) {
       console.error(`Error inside addSpotifyPlaylistSongs : ${err}`);

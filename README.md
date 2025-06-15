@@ -33,6 +33,6 @@ You can see this inside [src/index.js](/src/index.js)
 
 3. Starts puppeteer and getting the authorization code. `automateSpotifyToken()`
 4. Exchanging the authorization code into access token. `getSpotifyAccessToken()`
-5. Removes all songs from the playlist using the "src/temp/uris.json" file `removeSpotifyPlaylistSongs`
-6. Adds the searched songs to the playlist. `addSpotifyPlaylistSongs()`
+5. Removes all songs from the playlist using the "src/temp/uris.json" file from last week `removeSpotifyPlaylistSongs`
+6. Adds the searched songs to the playlist. `addSpotifyPlaylistSongs()` and adding this week's list into "src/temp/uris.json" 
 7. Update the title. `updateSpotifyPlaylistTitle()`
