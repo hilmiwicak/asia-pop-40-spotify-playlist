@@ -99,9 +99,15 @@ const automateSpotifyToken = () => {
     await page.waitForSelector("input#login-username");
 
     await page.type("input#login-username", SPOTIFY_EMAIL, { delay: 300 });
-    await page.type("input#login-password", SPOTIFY_PASSWORD, { delay: 300 });
+    await page.click("button#login-button", { "button": "left", delay: 300 });
 
-    await page.click("button#login-button", { "button": "left" });
+    await page.waitForSelector("button[data-encore-id='buttonTertiary']");
+    await page.click("button[data-encore-id='buttonTertiary']", { "button": "left", delay: 300 });
+
+    await page.waitForSelector("input#login-password");
+    await page.type("input#login-password", SPOTIFY_PASSWORD, { delay: 300 });
+    await page.click("button#login-button", { "button": "left", delay: 300 });
+
 
     // await page.waitForNavigation({
     //   timeout: 10000,
@@ -252,7 +258,7 @@ const addSpotifyPlaylistSongs = async (token, songURIs) => {
 
       fs.writeFileSync(
         URIPath,
-        JSON.stringify(spotifyURIs),
+        JSON.stringify(filteredURIs),
         "utf8"
       );
 

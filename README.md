@@ -30,6 +30,9 @@ You can see this inside [src/index.js](/src/index.js)
     Because I use authorization code flow. Every authorization flow needs redirect_uri in their query parameter (except client credentials, but the scope of client credentials flow is so small) , and they returns the token inside the url (either hash parameter or query parameter). Server is needed to send the token into node code.  
 
     accessing `127.0.0.1:3000/get-token-hash?code=xxx` endpoint using GET method will automatically close the server.
+		
+	Or, to start the server independently (without running the main `npm start`, you could run with `node -e 'import("./src/server.js").then(loadedModule => loadedModule.startServer() )'` on the project's root directory.
+
 
 3. Starts puppeteer and getting the authorization code. `automateSpotifyToken()`
 4. Exchanging the authorization code into access token. `getSpotifyAccessToken()`
